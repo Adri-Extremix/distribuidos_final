@@ -7,6 +7,8 @@
 #define false 0
 #define true 1
 
+#define DEFAULT_SIZE 256
+
 int createUser(user *usr, char *name, char *ip, int port) {
     /*validacion*/
     if (strlen(name) < 1 || strlen(name) > CHARSIZE) {
@@ -20,7 +22,7 @@ int createUser(user *usr, char *name, char *ip, int port) {
 
     strcpy(usr->name, name);
     usr->conected = false;
-    usr->contentsMaxLen = 100;
+    usr->contentsMaxLen = DEFAULT_SIZE;
     usr->contents = (file*)malloc(usr->contentsMaxLen*sizeof(file));
     usr->contentsLen = 0; 
     usr->port = port;
