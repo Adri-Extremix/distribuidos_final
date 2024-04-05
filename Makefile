@@ -19,6 +19,11 @@ common.o: $(SRC)common.c
 	@echo "compiling common..."
 	gcc -c -fPIC $<
 
+test: src/servidor/tests_userList.c src/servidor/server_storage.c
+	gcc -g -Wall -c src/servidor/server_storage.c
+	gcc -g -Wall -c src/servidor/tests_userList.c
+	gcc -o test tests_userList.o server_storage.o
+
 clean:
 	rm *.o
 
