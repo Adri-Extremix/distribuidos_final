@@ -1,5 +1,4 @@
 .vscode
-servidor
 *.log
 *.aux
 *.out
