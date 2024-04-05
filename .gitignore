@@ -1,3 +1,13 @@
+.vscode
+servidor
+*.log
+*.aux
+*.out
+*.toc
+*.swp
+*.so
+*.o
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
