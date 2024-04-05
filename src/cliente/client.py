@@ -1,5 +1,8 @@
 from enum import Enum
 import argparse
+import socket
+import threading
+import sys
 
 class client :
 
@@ -14,49 +17,297 @@ class client :
     # ****************** ATTRIBUTES ******************
     _server = None
     _port = -1
-
+    _sock = None
+    _username = None
     # ******************** METHODS *******************
+
+    @staticmethod
+    def __read_string(serv_sock):
+        message = ""
+        while True:
+            msg = serv_sock.recv(1)
+            if(msg == b'\0'):
+                break
+            message += msg.decode()
+        message = message + '\0'
+
+        return message
 
 
     @staticmethod
-    def  register(user) :
-        #  Write your code here
-        return client.RC.ERROR
+    def __get_socket():
 
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_address = (client._server,client._port)
+        sock.connect(server_address)
+        return sock
+
+    @staticmethod
+    def __reg_unreg(user:str, reg_unreg:str):
+
+        serv_sock = client.__get_socket()
+        try:
+            message = f"{reg_unreg}\0".encode()
+            serv_sock.sendall(message)
+
+            message = f"{user}\0".encode()
+            serv_sock.sendall(message)
+
+            message = ""
+
+            msg = int(serv_sock.recv(1).decode())
+
+        except Exception as e:
+            msg = 2
+            
+        finally:
+            serv_sock.close()
+
+        match msg:
+            case 0:
+                print(f"{reg_unreg} OK")
+            case 1:
+                if reg_unreg == "REGISTER":
+                    print("USERNAME IN USE")
+                else:
+                    print("USER DOES NOT EXIST")
+            case 2:
+                print(f"{reg_unreg} FAIL")
+
+        return msg
+    
+    @staticmethod
+    def  register(user) :
+
+        return client.__reg_unreg(user,"REGISTER")
    
     @staticmethod
     def  unregister(user) :
-        #  Write your code here
-        return client.RC.ERROR
+        
+        return client.__reg_unreg(user,"UNREGISTER")
 
+    @staticmethod
+    def __client_listen(sock):
 
-    
+        sock.listen(5)
+
+        while not not True:
+            try:
+                connection, client_address = sock.accept()
+                try:
+                    message = client.__read_string(connection)
+                    print("POR TERMINAR")
+                
+
+                finally:
+                    connection.close()
+            except OSError:
+                print("Socket cerrado mientras se esperaba una conexión")
+                return
+        
+
     @staticmethod
     def  connect(user) :
-        #  Write your code here
-        return client.RC.ERROR
+        serv_sock = client.__get_socket()
+
+        try:
+            message = b'CONNECT\0'
+            serv_sock.sendall(message)
+
+            message = f"{user}\0".encode()
+            serv_sock.sendall(message)
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            
+            client._sock = sock
+
+            ip_address = socket.gethostbyname(socket.gethostname())
+            server_address = (ip_address,0)
+            sock.bind(server_address)
+
+            address, port = sock.getsockname()
+
+            message = f"{port}\0".encode()
+            serv_sock.sendall(message)
+
+            message = ""
+
+            msg = int(serv_sock.recv(1).decode())
+
+            if (client._username):
+                msg = 3
+            match msg:
+                case 0:
+                    print("CONNECT OK")
+                    client._username = user
+                    p2p_thread = threading.Thread(target=client.__client_listen,args=(sock))
+                    p2p_thread.start()
+                case 1:
+                    print("CONNECT FAIL, USER DOES NOT EXIST")
+                    sock.close()
+                case 2:
+                    print("USER ALREADY CONNECTED")
+                    sock.close()
+                case 3:
+                    print("CONNECT FAIL")
+                    sock.close()
+
+        finally:
+            serv_sock.close()
+
+        return msg
 
 
     
     @staticmethod
     def  disconnect(user) :
-        #  Write your code here
-        return client.RC.ERROR
+
+        serv_sock = client.__get_socket()
+
+        try:
+            message = b'DISCONNECT\0'
+            serv_sock.sendall(message)
+
+            message = f"{user}\0".encode()
+            serv_sock.sendall(message)
+
+            message = ""
+
+            msg = int(serv_sock.recv(1).decode())
+
+            match msg:
+                case 0:
+                    print("DISCONNECT OK")
+                    client._sock.close()
+                case 1:
+                    print("DISCONNECT FAIL / USER DOES NOT EXIST")
+                case 2:
+                    print("DISCONNECT FAIL / USER NOT CONNECTED")
+                case 3:
+                    print("DISCONNECT FAIL")
+
+        finally:
+            serv_sock.close()
+
+        return msg
 
     @staticmethod
     def  publish(fileName,  description) :
-        #  Write your code here
-        return client.RC.ERROR
+        
+        serv_sock = client.__get_socket()
+
+        try:
+            message = b'PUBLISH\0'
+            serv_sock.sendall(message)
+
+            message = f"{fileName}\0".encode()
+            serv_sock.sendall(message)
+
+            message = f"{description}\0".encode()
+            serv_sock.sendall(message)
+
+            message = f"{client._username}\0".encode()
+            serv_sock.sendall(message)
+
+            message = ""
+
+            msg = int(serv_sock.recv(1).decode())
+
+            match msg:
+                case 0:
+                    print("PUBLISH OK")
+                    client._sock.close()
+                case 1:
+                    print("PUBLISH FAIL, USER DOES NOT EXIST")
+                case 2:
+                    print("PUBLISH FAIL, USER NOT CONNECTED")
+                case 3:
+                    print("PUBLISH FAIL, CONTENT ALREADY PUBLISHED")
+                case 4:
+                    print("PUBLISH FAIL")
+        finally:
+            serv_sock.close()
+        
+        return msg
 
     @staticmethod
     def  delete(fileName) :
-        #  Write your code here
-        return client.RC.ERROR
+
+        serv_sock = client.__get_socket()
+
+        try:
+            message = b'DELETE\0'
+            serv_sock.sendall(message)
+
+            message = f"{client._username}\0".encode()
+            serv_sock.sendall(message)
+
+            message = f"{fileName}\0".encode()
+            serv_sock.sendall(message)
+
+            message = ""
+
+            msg = int(serv_sock.recv(1).decode())
+
+            match msg:
+                case 0:
+                    print("DELETE OK")
+                    client._sock.close()
+                case 1:
+                    print("DELETE FAIL, USER DOES NOT EXIST")
+                case 2:
+                    print("DELETE FAIL, USER NOT CONNECTED")
+                case 3:
+                    print("DELETE FAIL, CONTENT NOT PUBLISHED")
+                case 4:
+                    print("DELETE FAIL")
+        finally:
+            serv_sock.close()
+        
+        return msg
 
     @staticmethod
     def  listusers() :
-        #  Write your code here
-        return client.RC.ERROR
+
+        serv_sock = client.__get_socket()
+
+        try:
+            message = b'LIST_USERS\0'
+            serv_sock.sendall(message)
+
+            message = f"{client._username}\0".encode()
+            serv_sock.sendall(message)
+
+            message = ""
+
+            msg = int(serv_sock.recv(1).decode())
+
+            match msg:
+                case 0:
+                    print("LIST_USERS OK")
+
+                    num = int(message)
+
+                    for i in range(num):
+                        username = client.__read_string(serv_sock)
+                        ip = client.__read_string(serv_sock)
+                        port = client.__read_string(serv_sock)
+
+                        print(f"{username} {ip} {port}")
+
+                    client._sock.close()
+                case 1:
+                    print("LIST_USERS FAIL, USER DOES NOT EXIST")
+                case 2:
+                    print("LIST_USERS FAIL, USER NOT CONNECTED")
+                case 3:
+                    print("DELETE FAIL")
+        
+        finally:
+            serv_sock.close()
+
+        return msg
 
     @staticmethod
     def  listcontent(user) :
@@ -172,8 +423,8 @@ class client :
             parser.error("Error: Port must be in the range 1024 <= port <= 65535");
             return False;
         
-        _server = args.s
-        _port = args.p
+        client._server = args.s
+        client._port = args.p
 
         return True
 
@@ -186,6 +437,7 @@ class client :
             return
 
         #  Write code here
+        print(client._server,client._port)
         client.shell()
         print("+++ FINISHED +++")
     
