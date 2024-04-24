@@ -17,35 +17,55 @@ class client :
     # ****************** ATTRIBUTES ******************
     _server = None
     _port = -1
+
     _sock = None
     _username = None
+    _publised = set()
     # ******************** METHODS *******************
 
     @staticmethod
-    def __read_string(serv_sock):
+    def _read_string(sock):
         message = ""
         while True:
-            msg = serv_sock.recv(1)
+            msg = sock.recv(1)
             if(msg == b'\0'):
                 break
             message += msg.decode()
         message = message + '\0'
 
         return message
-
+    @staticmethod
+    def write_file_to_socket(sock, file_path):
+        with open(file_path, 'rb') as file:
+            while True:
+                data = file.read(1024)
+                if not data:
+                    # EOF, no more data to read
+                    break
+                sock.sendall(data)
 
     @staticmethod
-    def __get_socket():
+    def _read_until_eof(sock):
+        data = ""
+        while True:
+            chunk = sock.recv(1024)
+            if not chunk:
+                break
+            data += chunk.decode()
+        return data
 
+    @staticmethod
+    def _get_socket(ip,port):
+        # Función que abre el socket del servidor
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_address = (client._server,client._port)
+        server_address = (ip,port)
         sock.connect(server_address)
         return sock
 
     @staticmethod
-    def __reg_unreg(user:str, reg_unreg:str):
-
-        serv_sock = client.__get_socket()
+    def _reg_unreg(user:str, reg_unreg:str):
+        # Función que se encarga de la funcionalidad de registro y darse de baja
+        serv_sock = client._get_socket(client._server,client._port)
         try:
             message = f"{reg_unreg}\0".encode()
             serv_sock.sendall(message)
@@ -55,15 +75,15 @@ class client :
 
             message = ""
 
-            msg = int(serv_sock.recv(1).decode())
+            answer = int(serv_sock.recv(1).decode())
 
         except Exception as e:
-            msg = 2
+            answer = 2
             
         finally:
             serv_sock.close()
 
-        match msg:
+        match answer:
             case 0:
                 print(f"{reg_unreg} OK")
             case 1:
@@ -74,20 +94,22 @@ class client :
             case 2:
                 print(f"{reg_unreg} FAIL")
 
-        return msg
+        return answer
     
     @staticmethod
     def  register(user) :
 
-        return client.__reg_unreg(user,"REGISTER")
+        return client._reg_unreg(user,"REGISTER")
    
     @staticmethod
     def  unregister(user) :
         
-        return client.__reg_unreg(user,"UNREGISTER")
+        return client._reg_unreg(user,"UNREGISTER")
 
     @staticmethod
-    def __client_listen(sock):
+    def _client_listen(sock):
+        # Función que realiza el hilo secundario del cliente
+        # para atender a otros clientes
 
         sock.listen(5)
 
@@ -95,9 +117,33 @@ class client :
             try:
                 connection, client_address = sock.accept()
                 try:
-                    message = client.__read_string(connection)
-                    print("POR TERMINAR")
-                
+                    message = client._read_string(connection)
+
+                    if message == b'GET_FILE\0':
+                        
+                        message = client._read_string(connection)
+
+                        namefile = message
+
+                        if namefile not in client._publised:
+                            answer = 2
+                            connection.sendall(answer.to_bytes(1,'big'))
+                        else:
+                            try:
+                                with open(namefile, mode="rb", encoding="utf-8") as file:
+                                    while True:
+                                        chunk = file.read(1024)
+                                        if not chunk:
+                                            break
+                                        connection.sendall(chunk)
+                                answer = 0
+                                connection.sendall(answer.to_bytes(1,'big'))
+                            except FileNotFoundError:
+                                answer = 1
+                                connection.sendall(answer.to_bytes(1,'big'))
+                    else:    
+                        answer = 2
+                        connection.sendall(answer.to_bytes(1,'big'))
 
                 finally:
                     connection.close()
@@ -108,7 +154,7 @@ class client :
 
     @staticmethod
     def  connect(user) :
-        serv_sock = client.__get_socket()
+        serv_sock = client._get_socket(client._server,client._port)
 
         try:
             message = b'CONNECT\0'
@@ -120,28 +166,28 @@ class client :
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             
-            client._sock = sock
+            client._sock = sock # Guardo el socket para poder cerrarlo en el disconnect
 
             ip_address = socket.gethostbyname(socket.gethostname())
-            server_address = (ip_address,0)
+            server_address = (ip_address,0) # el puerto 0 toma un puerto libre
             sock.bind(server_address)
 
-            address, port = sock.getsockname()
+            address, port = sock.getsockname() # Obtengo el puerto asignado
 
             message = f"{port}\0".encode()
             serv_sock.sendall(message)
 
             message = ""
 
-            msg = int(serv_sock.recv(1).decode())
+            answer = int(serv_sock.recv(1).decode())
 
-            if (client._username):
-                msg = 3
-            match msg:
+            if (client._username):  # Si ya hay un cliente conectado
+                answer = 3
+            match answer:
                 case 0:
                     print("CONNECT OK")
                     client._username = user
-                    p2p_thread = threading.Thread(target=client.__client_listen,args=(sock))
+                    p2p_thread = threading.Thread(target=client._client_listen,args=(sock))
                     p2p_thread.start()
                 case 1:
                     print("CONNECT FAIL, USER DOES NOT EXIST")
@@ -156,14 +202,12 @@ class client :
         finally:
             serv_sock.close()
 
-        return msg
-
-
+        return answer
     
     @staticmethod
     def  disconnect(user) :
 
-        serv_sock = client.__get_socket()
+        serv_sock = client._get_socket(client._server,client._port)
 
         try:
             message = b'DISCONNECT\0'
@@ -174,9 +218,9 @@ class client :
 
             message = ""
 
-            msg = int(serv_sock.recv(1).decode())
+            answer = int(serv_sock.recv(1).decode())
 
-            match msg:
+            match answer:
                 case 0:
                     print("DISCONNECT OK")
                     client._sock.close()
@@ -190,12 +234,12 @@ class client :
         finally:
             serv_sock.close()
 
-        return msg
+        return answer
 
     @staticmethod
     def  publish(fileName,  description) :
         
-        serv_sock = client.__get_socket()
+        serv_sock = client._get_socket(client._server,client._port)
 
         try:
             message = b'PUBLISH\0'
@@ -212,12 +256,12 @@ class client :
 
             message = ""
 
-            msg = int(serv_sock.recv(1).decode())
+            answer = int(serv_sock.recv(1).decode())
 
-            match msg:
+            match answer:
                 case 0:
                     print("PUBLISH OK")
-                    client._sock.close()
+                    client._publised.add(fileName)
                 case 1:
                     print("PUBLISH FAIL, USER DOES NOT EXIST")
                 case 2:
@@ -229,12 +273,12 @@ class client :
         finally:
             serv_sock.close()
         
-        return msg
+        return answer
 
     @staticmethod
     def  delete(fileName) :
 
-        serv_sock = client.__get_socket()
+        serv_sock = client._get_socket(client._server,client._port)
 
         try:
             message = b'DELETE\0'
@@ -248,12 +292,12 @@ class client :
 
             message = ""
 
-            msg = int(serv_sock.recv(1).decode())
+            answer = int(serv_sock.recv(1).decode())
 
-            match msg:
+            match answer:
                 case 0:
                     print("DELETE OK")
-                    client._sock.close()
+                    client._publised.remove(fileName)
                 case 1:
                     print("DELETE FAIL, USER DOES NOT EXIST")
                 case 2:
@@ -265,12 +309,13 @@ class client :
         finally:
             serv_sock.close()
         
-        return msg
+        return answer
 
     @staticmethod
-    def  listusers() :
-
-        serv_sock = client.__get_socket()
+    def get_list_users()->tuple:
+        """ 
+         @return Devuelve un tupla, tupla[0] es el código de error y tupla[1] es una lista de diccionarios """
+        serv_sock = client._get_socket(client._server,client._port)
 
         try:
             message = b'LIST_USERS\0'
@@ -281,43 +326,140 @@ class client :
 
             message = ""
 
-            msg = int(serv_sock.recv(1).decode())
-
-            match msg:
+            answer = int(serv_sock.recv(1).decode())
+            ret_list = []
+            match answer:
                 case 0:
+                    
                     print("LIST_USERS OK")
 
+                    message = client._read_string(serv_sock)
                     num = int(message)
 
                     for i in range(num):
-                        username = client.__read_string(serv_sock)
-                        ip = client.__read_string(serv_sock)
-                        port = client.__read_string(serv_sock)
+                        ret_dict = {}
+                        # Imprimo el listado de usuarios
+                        ret_dict["username"] = client._read_string(serv_sock)
+                        ret_dict["ip"] = client._read_string(serv_sock)
+                        ret_dict["port"] = client._read_string(serv_sock)
 
-                        print(f"{username} {ip} {port}")
+                        ret_list.append(ret_dict)
+                    return 0,ret_list
 
-                    client._sock.close()
                 case 1:
-                    print("LIST_USERS FAIL, USER DOES NOT EXIST")
+                    return 1,ret_list
                 case 2:
-                    print("LIST_USERS FAIL, USER NOT CONNECTED")
+                    return 2,ret_list
                 case 3:
-                    print("DELETE FAIL")
+                    return 3,ret_list
         
         finally:
             serv_sock.close()
 
-        return msg
+        return answer
+
+
+    @staticmethod
+    def  listusers():
+
+        answer, list_users = client.get_list_users()
+
+        match answer:
+            case 0:
+                print("LIST_USERS OK")
+
+                for dict_user in range(list_users):
+                    # Imprimo el listado de usuarios
+                    print(f"{dict_user["username"]} {dict_user["ip"]} {dict_user["port"]}")
+
+            case 1:
+                print("LIST_USERS FAIL, USER DOES NOT EXIST")
+            case 2:
+                print("LIST_USERS FAIL, USER NOT CONNECTED")
+            case 3:
+                print("DELETE FAIL")
+
+        return answer
 
     @staticmethod
     def  listcontent(user) :
-        #  Write your code here
-        return client.RC.ERROR
+        serv_sock = client._get_socket(client._server,client._port)
+
+        try:
+            message = b'LIST_CONTENT\0'
+            serv_sock.sendall(message)
+
+            message = f"{client._username}\0".encode()
+            serv_sock.sendall(message)
+
+            message = f"{user}\0".encode()
+            serv_sock.sendall(message)
+
+            answer = int(serv_sock.recv(1).decode())
+
+            match answer:
+                case 0:
+                    print("LIST_CONTENT OK")
+
+                    message = client._read_string(serv_sock)
+                    num = int(message)
+
+                    for i in range(num):
+                        filename = client._read_string(serv_sock)
+                        file_descr = client._read_string(serv_sock)
+
+                        print(f"{filename} {file_descr}")
+
+                case 1:
+                    print("LIST_CONTENT FAIL, USER DOES NOT EXIST")
+                case 2:
+                    print("LIST_CONTENT FAIL, USER NOT CONNECTED")
+                case 3:
+                    print("LIST_CONTENT FAIL, REMOTE USER DOES NOT EXIST")
+                case 4:
+                    print("LIST_CONTENT FAIL")
+        finally:
+            serv_sock.close()
+        
+        return answer
 
     @staticmethod
     def  getfile(user,  remote_FileName,  local_FileName) :
-        #  Write your code here
-        return client.RC.ERROR
+        
+        answer, list_users = client.get_list_users()
+
+        for dict_user in list_users:
+            if dict_user["username"] == user:
+                client_sock = client._get_socket(dict_user["ip"],dict_user["port"])
+                break
+        
+        try:
+            message = b'GET_FILE\0'
+            client_sock.sendall(message)
+
+            message = f"{remote_FileName}\0".encode()
+            client_sock.sendall(message)
+
+            answer = int(client_sock.recv(1).decode())
+
+            match answer:
+                case 0:
+                    print("GET_FILE OK")
+
+                    str_fichero_remoto = client._read_until_eof(client_sock)
+                    with open(local_FileName, mode="w", encoding="utf-8") as fichero_local:
+                        fichero_local.write(str_fichero_remoto)
+
+                case 1:
+                    print("GET_FILE FAIL, FILE NOT EXIST")
+                case 2:
+                    print("GET_FILE FAIL")
+        finally:
+            client_sock.close()
+        
+        return answer
+
+
 
     # *
     # **
