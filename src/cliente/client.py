@@ -78,7 +78,7 @@ class client :
             answer = int(serv_sock.recv(1).decode())
 
         except Exception as e:
-            answer = 2
+            answer = None
             
         finally:
             serv_sock.close()
@@ -181,26 +181,31 @@ class client :
 
             answer = int(serv_sock.recv(1).decode())
 
-            if (client._username):  # Si ya hay un cliente conectado
-                answer = 3
-            match answer:
-                case 0:
-                    print("CONNECT OK")
-                    client._username = user
-                    p2p_thread = threading.Thread(target=client._client_listen,args=(sock))
-                    p2p_thread.start()
-                case 1:
-                    print("CONNECT FAIL, USER DOES NOT EXIST")
-                    sock.close()
-                case 2:
-                    print("USER ALREADY CONNECTED")
-                    sock.close()
-                case _:
-                    print("CONNECT FAIL")
-                    sock.close()
+        except Exception as e:
+            answer = None
 
         finally:
             serv_sock.close()
+
+        if (client._username):  # Si ya hay un cliente conectado
+            answer = None
+        match answer:
+            case 0:
+                print("CONNECT OK")
+                client._username = user
+                p2p_thread = threading.Thread(target=client._client_listen,args=(sock))
+                p2p_thread.start()
+            case 1:
+                print("CONNECT FAIL, USER DOES NOT EXIST")
+                sock.close()
+            case 2:
+                print("USER ALREADY CONNECTED")
+                sock.close()
+            case _:
+                print("CONNECT FAIL")
+                sock.close()
+
+        
 
         return answer
     
@@ -220,7 +225,13 @@ class client :
 
             answer = int(serv_sock.recv(1).decode())
 
-            match answer:
+        except Exception as e:
+            answer = None
+
+        finally:
+            serv_sock.close()
+
+        match answer:
                 case 0:
                     print("DISCONNECT OK")
                     client._sock.close()
@@ -230,9 +241,6 @@ class client :
                     print("DISCONNECT FAIL / USER NOT CONNECTED")
                 case _:
                     print("DISCONNECT FAIL")
-
-        finally:
-            serv_sock.close()
 
         return answer
 
@@ -257,21 +265,25 @@ class client :
             message = ""
 
             answer = int(serv_sock.recv(1).decode())
+        except Exception as e:
+            answer = None
 
-            match answer:
-                case 0:
-                    print("PUBLISH OK")
-                    client._publised.add(fileName)
-                case 1:
-                    print("PUBLISH FAIL, USER DOES NOT EXIST")
-                case 2:
-                    print("PUBLISH FAIL, USER NOT CONNECTED")
-                case 3:
-                    print("PUBLISH FAIL, CONTENT ALREADY PUBLISHED")
-                case _:
-                    print("PUBLISH FAIL")
         finally:
             serv_sock.close()
+
+        match answer:
+            case 0:
+                print("PUBLISH OK")
+                client._publised.add(fileName)
+            case 1:
+                print("PUBLISH FAIL, USER DOES NOT EXIST")
+            case 2:
+                print("PUBLISH FAIL, USER NOT CONNECTED")
+            case 3:
+                print("PUBLISH FAIL, CONTENT ALREADY PUBLISHED")
+            case _:
+                print("PUBLISH FAIL")
+    
         
         return answer
 
@@ -294,20 +306,24 @@ class client :
 
             answer = int(serv_sock.recv(1).decode())
 
-            match answer:
-                case 0:
-                    print("DELETE OK")
-                    client._publised.remove(fileName)
-                case 1:
-                    print("DELETE FAIL, USER DOES NOT EXIST")
-                case 2:
-                    print("DELETE FAIL, USER NOT CONNECTED")
-                case 3:
-                    print("DELETE FAIL, CONTENT NOT PUBLISHED")
-                case _:
-                    print("DELETE FAIL")
+        except Exception as e:
+            answer = None
+
         finally:
             serv_sock.close()
+
+        match answer:
+            case 0:
+                print("DELETE OK")
+                client._publised.remove(fileName)
+            case 1:
+                print("DELETE FAIL, USER DOES NOT EXIST")
+            case 2:
+                print("DELETE FAIL, USER NOT CONNECTED")
+            case 3:
+                print("DELETE FAIL, CONTENT NOT PUBLISHED")
+            case _:
+                print("DELETE FAIL")
         
         return answer
 
@@ -351,12 +367,13 @@ class client :
                 case 2:
                     return 2,ret_list
                 case _:
-                    return 3,ret_list
+                    return None,ret_list
+        except Exception as e:
+            return None,[]
         
         finally:
             serv_sock.close()
 
-        return answer
 
 
     @staticmethod
@@ -418,9 +435,14 @@ class client :
                     print("LIST_CONTENT FAIL, REMOTE USER DOES NOT EXIST")
                 case _:
                     print("LIST_CONTENT FAIL")
+        
+        except Exception as e:
+            print("LIST_CONTENT FAIL")
+            answer = None
+        
         finally:
             serv_sock.close()
-        
+
         return answer
 
     @staticmethod
