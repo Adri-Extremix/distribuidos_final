@@ -11,7 +11,7 @@
    #include <errno.h>
 
    int     serverSocket ( unsigned int addr, int port, int type ) ;
-   int     serverAccept ( int sd ) ;
+   int     serverAccept ( int sd, struct sockaddr_in *returnIp) ;
    int     clientSocket ( char *remote, int port ) ;
 
    int     sendMessage  ( int socket, char *buffer, int len );

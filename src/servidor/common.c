@@ -38,7 +38,7 @@ int serverSocket(unsigned int addr, int port, int type) {
     return sd;
 }
 
-int serverAccept(int sd) {
+int serverAccept(int sd, struct sockaddr_in *returnIp) {
     int sc;
     struct sockaddr_in client_addr;
     socklen_t size;
@@ -54,6 +54,8 @@ int serverAccept(int sd) {
 
     printf("conexión aceptada de IP: %s y puerto: %d\n",
         inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+    
+    memcpy(returnIp, &client_addr, sizeof(client_addr));
 
     return sc;
 }

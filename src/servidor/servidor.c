@@ -5,11 +5,25 @@
 #include <pthread.h>
 #include <string.h>
 #include "common.h"
+#include "server_storage.h"
 
 const int CHAR_SIZE = 256;
 const int ARR_SIZE = 1024;
 
-/* int i = 0; */
+user_list usuarios; 
+
+/**
+ *  
+ *  "REGISTER" username -> int
+ *  "UNREGISTER" username -> int
+ *  "CONNECT" username -> int
+ *  "DISCONNECT" username -> int
+ *  "PUBLISH" fileName, description, username -> int
+ *  "DELETE" username, fileName -> int
+ *  "LIST_USERS" -> int, username, ip, port
+ *  "LIST_CONTENT", username -> int, int (num_elem), (filename, file_description) * num_elem
+*/
+
 pthread_mutex_t mutex;
 pthread_cond_t cond;
 int copiado = 0;
@@ -22,148 +36,71 @@ void stop_server() {
     exit(0);
 }
 
-int tratar_peticion(void* sc) {
+typedef struct p {
+    int sc;
+    struct sockaddr_in client; 
+} peticion; 
+
+int tratar_peticion(void* pet) {
     int local_sc;
-
-    int success;
-    int op;
-    int N_i;
-    int key;
-    char value1[CHAR_SIZE];
-    int N_value2;
-    double value2[ARR_SIZE];
-
-    char buffer_local[CHAR_SIZE];
+    char ip[32];
+    int port = 0;  
+    char temp[ARR_SIZE];
 
     pthread_mutex_lock(&mutex);
     // copia de la petición 
-    local_sc = *((int*)sc);
+    local_sc = ((peticion*)pet)->sc;
+    strcpy(ip, inet_ntoa(((peticion*)pet)->client.sin_addr));
+    port = ntohs(((peticion*)pet)->client.sin_port);
     copiado = 1;
     pthread_cond_signal(&cond);
     pthread_mutex_unlock(&mutex);
+
     printf("tratando peticion de %i...\n", local_sc);
-    readLine(local_sc, buffer_local, sizeof(char) + 1);
-    op = buffer_local[0] - '0';
-    printf(">>> op: %i\n", op);
+    // leer operacion 
+    readLine(local_sc, temp, ARR_SIZE);
 
-    switch (op) {
-    case 0: // init
-        printf("init:\n");
-        success = init();
-        sprintf(buffer_local, "%i", success);
-        writeLine(local_sc, buffer_local);
-        break;
+    if (strcmp(temp, "REGISTER") == 0) {
+        // leer nombre de usuario
+        printf("register\n"); 
+        readLine(local_sc, temp, ARR_SIZE);
+        
+        //addUser(usuarios, temp, )
 
-    case 1: // set value
-        // Leemos key
-        readLine(local_sc, buffer_local, CHAR_SIZE);
-        key = atoi(buffer_local);
 
-        // Leemos value1
-        readLine(local_sc, buffer_local, CHAR_SIZE);
-        strcpy(value1, buffer_local);
+    } else if (strcmp(temp, "UNREGISTER") == 0) {
+        printf("unregister\n"); 
 
-        // Leemos N_i
-        readLine(local_sc, buffer_local, CHAR_SIZE);
-        N_i = atoi(buffer_local);
+    } else if (strcmp(temp, "CONNECT") == 0) {
+        printf("connect\n"); 
 
-        // Leemos value2
-        for (int i = 0; i < N_i; i++) {
-            readLine(local_sc, buffer_local, CHAR_SIZE);
-            value2[i] = atof(buffer_local);
-        }
+    } else if (strcmp(temp, "DISCONNECT") == 0) {
+        printf("disconnect\n"); 
 
-        // Obtenemos el resultado de la operación y escribimos al cliente el resultado
-        success = set_value(key, value1, N_i, value2);
-        sprintf(buffer_local, "%i", success);
-        writeLine(local_sc, buffer_local);
-        break;
+    } else if (strcmp(temp, "PUBLISH") == 0) {
+        printf("publish\n"); 
 
-    case 2: // get value
+    } else if (strcmp(temp, "DELETE") == 0) {
+        printf("delete\n"); 
+        
+    } else if (strcmp(temp, "LIST_USERS") == 0) {
+        printf("list_users\n"); 
 
-        readLine(local_sc, buffer_local, CHAR_SIZE);
-        key = atoi(buffer_local);
-
-        success = get_value(key, value1, &N_i, value2);
-
-        // Escribimos value 1
-        strcpy(buffer_local, value1);
-        writeLine(local_sc, buffer_local);
-        // Escribimos N_value 2
-        sprintf(buffer_local, "%i", N_i);
-        writeLine(local_sc, buffer_local);
-
-        // Escribimos value2
-        for (int i = 0; i < N_i; i++) {
-            sprintf(buffer_local, "%lf", value2[i]);
-            writeLine(local_sc, buffer_local);
-        }
-
-        // Escribimos el resultado de la operación
-        sprintf(buffer_local, "%i", success);
-        writeLine(local_sc, buffer_local);
-
-        break;
-
-    case 3: // modify value
-        // Leemos key
-        readLine(local_sc, buffer_local, CHAR_SIZE);
-        key = atoi(buffer_local);
-
-        // Leemos value1
-        readLine(local_sc, buffer_local, CHAR_SIZE);
-        strcpy(value1, buffer_local);
-
-        // Leemos N_i
-        readLine(local_sc, buffer_local, CHAR_SIZE);
-        N_i = atoi(buffer_local);
-
-        // Leemos value2
-        for (int i = 0; i < N_i; i++) {
-            readLine(local_sc, buffer_local, CHAR_SIZE);
-            value2[i] = atof(buffer_local);
-        }
-
-        // Obtenemos el resultado de la operación y escribimos al cliente el resultado
-        success = modify_value(key, value1, N_i, value2);
-        sprintf(buffer_local, "%i", success);
-        writeLine(local_sc, buffer_local);
-        break;
-
-    case 4: // delete key
-
-        // Leemos la key
-        readLine(local_sc, buffer_local, CHAR_SIZE);
-        key = atoi(buffer_local);
-
-        // Escribimos el resultado de la operación
-        success = delete_key(key);
-        sprintf(buffer_local, "%i", success);
-        writeLine(local_sc, buffer_local);
-        break;
-
-    case 5: // exists
-
-        // Leemos la key
-        readLine(local_sc, buffer_local, CHAR_SIZE);
-        key = atoi(buffer_local);
-
-        // Escribimos el resultado de la operación
-        success = exist(key);
-        sprintf(buffer_local, "%i", success);
-        writeLine(local_sc, buffer_local);
-        break;
-
-    default:
-        fprintf(stderr, "Not recognised operation: expected [0, 5] but %d was received\n", op);
-        break;
+    } else if (strcmp(temp, "LIST_CONTENT") == 0) {
+        printf("list_content\n"); 
+        
+    } else {
+        fprintf(stderr, "server: not recognised operation (%s)\n", temp);
     }
+    
     close(local_sc);
     printf("finish: %i\n", local_sc);
     pthread_exit(NULL);
 }
 
 int main(int argc, char* argv[]) {
+    pthread_mutex_init(&mutex, NULL);
+    usuarios = createUserList();
 
     signal(SIGINT, stop_server);
     int sc;
@@ -179,7 +116,13 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     while (!!1) {
-        sc = serverAccept(sd);
+        peticion p;
+        struct sockaddr_in client;
+
+        sc = serverAccept(sd, &client);
+        p.client = client;
+        p.sc = sc;
+
         if (sc < 0) {
             printf("Error en serverAccept\n");
             continue;
@@ -188,7 +131,7 @@ int main(int argc, char* argv[]) {
         pthread_attr_t attr;
         pthread_attr_init(&attr);
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-        pthread_create(&hilo, &attr, (void*)tratar_peticion, (void*)&sc);
+        pthread_create(&hilo, &attr, (void*)tratar_peticion, (void*)&p);
         pthread_mutex_lock(&mutex);
         while (!copiado) {
             pthread_cond_wait(&cond, &mutex);

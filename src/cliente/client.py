@@ -91,7 +91,7 @@ class client :
                     print("USERNAME IN USE")
                 else:
                     print("USER DOES NOT EXIST")
-            case 2:
+            case _:
                 print(f"{reg_unreg} FAIL")
 
         return answer
@@ -195,7 +195,7 @@ class client :
                 case 2:
                     print("USER ALREADY CONNECTED")
                     sock.close()
-                case 3:
+                case _:
                     print("CONNECT FAIL")
                     sock.close()
 
@@ -228,7 +228,7 @@ class client :
                     print("DISCONNECT FAIL / USER DOES NOT EXIST")
                 case 2:
                     print("DISCONNECT FAIL / USER NOT CONNECTED")
-                case 3:
+                case _:
                     print("DISCONNECT FAIL")
 
         finally:
@@ -268,7 +268,7 @@ class client :
                     print("PUBLISH FAIL, USER NOT CONNECTED")
                 case 3:
                     print("PUBLISH FAIL, CONTENT ALREADY PUBLISHED")
-                case 4:
+                case _:
                     print("PUBLISH FAIL")
         finally:
             serv_sock.close()
@@ -304,7 +304,7 @@ class client :
                     print("DELETE FAIL, USER NOT CONNECTED")
                 case 3:
                     print("DELETE FAIL, CONTENT NOT PUBLISHED")
-                case 4:
+                case _:
                     print("DELETE FAIL")
         finally:
             serv_sock.close()
@@ -350,7 +350,7 @@ class client :
                     return 1,ret_list
                 case 2:
                     return 2,ret_list
-                case 3:
+                case _:
                     return 3,ret_list
         
         finally:
@@ -370,13 +370,13 @@ class client :
 
                 for dict_user in range(list_users):
                     # Imprimo el listado de usuarios
-                    print(f"{dict_user["username"]} {dict_user["ip"]} {dict_user["port"]}")
+                    print(f"{dict_user['username']} {dict_user['ip']} {dict_user['port']}")
 
             case 1:
                 print("LIST_USERS FAIL, USER DOES NOT EXIST")
             case 2:
                 print("LIST_USERS FAIL, USER NOT CONNECTED")
-            case 3:
+            case _:
                 print("DELETE FAIL")
 
         return answer
@@ -416,7 +416,7 @@ class client :
                     print("LIST_CONTENT FAIL, USER NOT CONNECTED")
                 case 3:
                     print("LIST_CONTENT FAIL, REMOTE USER DOES NOT EXIST")
-                case 4:
+                case _:
                     print("LIST_CONTENT FAIL")
         finally:
             serv_sock.close()
@@ -452,7 +452,7 @@ class client :
 
                 case 1:
                     print("GET_FILE FAIL, FILE NOT EXIST")
-                case 2:
+                case _:
                     print("GET_FILE FAIL")
         finally:
             client_sock.close()
