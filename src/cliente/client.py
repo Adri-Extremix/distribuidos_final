@@ -533,6 +533,8 @@ class client :
 
                     elif(line[0]=="QUIT") :
                         if (len(line) == 1) :
+                            if client._username != None:
+                                client.disconnect(client._username)
                             break
                         else :
                             print("Syntax error. Use: QUIT")
