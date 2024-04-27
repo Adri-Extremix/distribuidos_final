@@ -97,14 +97,14 @@ int addUser(user_list users, char *user_name, char *ip, int port) {
         return 0;
     }
     perror("addUser: error in createUser");
-    return -1;
+    return 2;
 }
 
 int removeUser(user_list users, char *user_name) {
     int index = searchUser(users, user_name); // si la lista está vacía se detectará aquí
     if (index == -1) {
         perror("removeUser: error in searchUser");
-        return -1;
+        return 1;
     }
     user penitente = users->users[index];
     free(penitente.contents);
@@ -116,16 +116,21 @@ int addContent(user_list users, char *user_name, char* file_name, char* descript
     /*validacion*/
     if (strlen(file_name) < 1 || strlen(file_name) > CHARSIZE) {
         fprintf(stderr, "addContent: file_name not valid\n");
-        return -1;
+        return 4;
     }
 
     if (strlen(description) < 1 || strlen(description) > CHARSIZE) {
         fprintf(stderr, "addContent: description not valid\n");
+        return 4;
     }
     int index = searchUser(users, user_name);
     if (index == -1) {
         perror("addContent: error in searchUser");
-        return -1;
+        return 1;
+    }
+    if (!users->users[index].conected) {
+        perror("addContent: user not connected");
+        return 2;
     }
     user *generoso = &(users->users[index]);
     if (generoso->contentsLen == generoso->contentsMaxLen) {
@@ -134,7 +139,7 @@ int addContent(user_list users, char *user_name, char* file_name, char* descript
     int i = searchContent(generoso, file_name);
     if (i != -1) {
         perror("addContent: file already exists");
-        return -1;
+        return 3;
     }
     strcpy(generoso->contents[generoso->contentsLen].name, file_name);
     strcpy(generoso->contents[generoso->contentsLen].description, description);

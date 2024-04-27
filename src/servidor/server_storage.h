@@ -1,7 +1,7 @@
 #ifndef STORAGE_H
 #define STORAGE_H
 
-#define CHARSIZE 256
+#define CHARSIZE 512
 
 typedef struct {
     char name[CHARSIZE];

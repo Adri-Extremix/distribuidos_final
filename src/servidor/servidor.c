@@ -62,23 +62,69 @@ int tratar_peticion(void* pet) {
 
     if (strcmp(temp, "REGISTER") == 0) {
         // leer nombre de usuario
-        printf("register\n"); 
         readLine(local_sc, temp, ARR_SIZE);
-        
-        //addUser(usuarios, temp, )
-
+        printf("register %s %s %i\n", temp, ip, port); 
+        int result = addUser(usuarios, temp, ip, port);
+        sprintf(temp, "%i", result);
+        writeLine(local_sc, temp);
 
     } else if (strcmp(temp, "UNREGISTER") == 0) {
-        printf("unregister\n"); 
+         // leer nombre de usuario
+        readLine(local_sc, temp, ARR_SIZE);
+        printf("unregister %s\n", temp);
+        int result = removeUser(usuarios, temp);
+        sprintf(temp, "%i", result);
+        writeLine(local_sc, temp);
 
     } else if (strcmp(temp, "CONNECT") == 0) {
-        printf("connect\n"); 
+        readLine(local_sc, temp, ARR_SIZE); // username
+        printf("connect %s\n", temp); 
+        int result = 0;
+        int index = searchUser(usuarios, temp);
+        if (index != -1) {
+            if (! usuarios->users[index].conected) {
+                usuarios->users[index].conected = 1;
+                result = 0;
+                printf("connect complete\n");
+            } else {
+                result = 2;
+            }
+        } else {
+            result = 1;
+        }
+        sprintf(temp, "%i", result);
+        writeLine(local_sc, temp);
+
 
     } else if (strcmp(temp, "DISCONNECT") == 0) {
-        printf("disconnect\n"); 
+        readLine(local_sc, temp, ARR_SIZE); // username
+        printf("disconnect %s\n", temp); 
+        int result = 0;
+        int index = searchUser(usuarios, temp);
+        if (index != -1) {
+            if ( usuarios->users[index].conected) {
+                usuarios->users[index].conected = 0;
+                result = 0;
+            } else {
+                result = 2;
+            }
+        } else {
+            result = 1;
+        }
+        sprintf(temp, "%i", result);
+        writeLine(local_sc, temp);
 
     } else if (strcmp(temp, "PUBLISH") == 0) {
         printf("publish\n"); 
+        char fileName[ARR_SIZE];
+        char description[ARR_SIZE];
+        char username[ARR_SIZE];
+        readLine(local_sc, fileName, ARR_SIZE);
+        readLine(local_sc, description, ARR_SIZE);
+        readLine(local_sc, username, ARR_SIZE);
+        int result = addContent(usuarios, username, fileName, description);
+        sprintf(temp, "%i", result);
+        writeLine(local_sc, temp);
 
     } else if (strcmp(temp, "DELETE") == 0) {
         printf("delete\n"); 
