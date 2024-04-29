@@ -1,5 +1,5 @@
 
-OBJ=servidor.o
+OBJ=servidor.o common.o server_storage.o
 FLAGS=-g -Wall -lrt
 SRC=src/servidor/
 
@@ -14,6 +14,10 @@ all: $(OBJ)
 servidor.o: $(SRC)servidor.c common.o
 	@echo "compiling server..."
 	gcc -c $(SRC)servidor.c
+
+server_storage.o: $(SRC)server_storage.c 
+	@echo "compiling server_storage..."
+	gcc -c $(SRC)server_storage.c
 
 common.o: $(SRC)common.c
 	@echo "compiling common..."

@@ -20,7 +20,9 @@ class client :
 
     _sock = None
     _username = None
-    _publised = set()
+    _published = set()
+    _p2p_thread = None
+    _stop_event = threading.Event()
     # ******************** METHODS *******************
 
     @staticmethod
@@ -110,11 +112,12 @@ class client :
     def _client_listen(sock):
         # Función que realiza el hilo secundario del cliente
         # para atender a otros clientes
-
+        print("Hola soy un hilo")
         sock.listen(5)
-
-        while not not True:
+        print("Escucho peticiones")
+        while not client._stop_event.is_set():
             try:
+                print("Intento aceptar una conexion")
                 connection, client_address = sock.accept()
                 try:
                     message = client._read_string(connection)
@@ -125,12 +128,12 @@ class client :
 
                         namefile = message
 
-                        if namefile not in client._publised:
+                        if namefile not in client._published:
                             answer = 2
                             connection.sendall(answer.to_bytes(1,'big'))
                         else:
                             try:
-                                with open(namefile, mode="rb", encoding="utf-8") as file:
+                                with open(namefile, mode="rb") as file:
                                     while True:
                                         chunk = file.read(1024)
                                         if not chunk:
@@ -154,6 +157,11 @@ class client :
 
     @staticmethod
     def  connect(user) :
+
+        if (client._username):
+            print("CONNECT FAIL")  # Si ya hay un cliente conectado
+            return 
+        
         serv_sock = client._get_socket(client._server,client._port)
 
         try:
@@ -182,19 +190,19 @@ class client :
             answer = int(serv_sock.recv(1).decode())
 
         except Exception as e:
+            print("Ha dado una excepción")
             answer = None
 
         finally:
             serv_sock.close()
 
-        if (client._username):  # Si ya hay un cliente conectado
-            answer = None
+        
         match answer:
             case 0:
                 print("CONNECT OK")
                 client._username = user
-                p2p_thread = threading.Thread(target=client._client_listen,args=(sock))
-                p2p_thread.start()
+                client._p2p_thread = threading.Thread(target=client._client_listen,args=(sock,))
+                client._p2p_thread.start()
             case 1:
                 print("CONNECT FAIL, USER DOES NOT EXIST")
                 sock.close()
@@ -234,7 +242,10 @@ class client :
         match answer:
                 case 0:
                     print("DISCONNECT OK")
+                    client._stop_event.set()
+                    client._p2p_thread.join()
                     client._sock.close()
+                    client._username = None
                 case 1:
                     print("DISCONNECT FAIL / USER DOES NOT EXIST")
                 case 2:
@@ -274,7 +285,7 @@ class client :
         match answer:
             case 0:
                 print("PUBLISH OK")
-                client._publised.add(fileName)
+                client._published.add(fileName)
             case 1:
                 print("PUBLISH FAIL, USER DOES NOT EXIST")
             case 2:
@@ -315,7 +326,7 @@ class client :
         match answer:
             case 0:
                 print("DELETE OK")
-                client._publised.remove(fileName)
+                client._published.remove(fileName)
             case 1:
                 print("DELETE FAIL, USER DOES NOT EXIST")
             case 2:
