@@ -25,6 +25,8 @@ user_list usuarios;
 */
 
 pthread_mutex_t mutex;
+pthread_mutex_t mutex_hilos;
+pthread_cond_t cond_hilos;
 pthread_cond_t cond;
 int copiado = 0;
 int sd = 70000;
@@ -64,7 +66,11 @@ int tratar_peticion(void* pet) {
         // leer nombre de usuario
         readLine(local_sc, temp, ARR_SIZE);
         printf("register %s %s %i\n", temp, ip, port); 
+
+        pthread_mutex_lock(&mutex_hilos); // acceso a la estructura
         int result = addUser(usuarios, temp, ip, port);
+        pthread_mutex_unlock(&mutex_hilos);
+
         sprintf(temp, "%i", result);
         writeLine(local_sc, temp);
 
@@ -72,7 +78,12 @@ int tratar_peticion(void* pet) {
          // leer nombre de usuario
         readLine(local_sc, temp, ARR_SIZE);
         printf("unregister %s\n", temp);
+
+        pthread_mutex_lock(&mutex_hilos);
         int result = removeUser(usuarios, temp);
+        pthread_mutex_unlock(&mutex_hilos);
+        
+        
         sprintf(temp, "%i", result);
         writeLine(local_sc, temp);
 
@@ -80,7 +91,10 @@ int tratar_peticion(void* pet) {
         readLine(local_sc, temp, ARR_SIZE); // username
         printf("connect %s\n", temp); 
         int result = 0;
+
+        pthread_mutex_lock(&mutex_hilos);
         int index = searchUser(usuarios, temp);
+
         if (index != -1) {
             if (! usuarios->users[index].conected) {
                 usuarios->users[index].conected = 1;
@@ -92,6 +106,8 @@ int tratar_peticion(void* pet) {
         } else {
             result = 1;
         }
+        pthread_mutex_unlock(&mutex_hilos);
+
         sprintf(temp, "%i", result);
         writeLine(local_sc, temp);
 
@@ -100,6 +116,8 @@ int tratar_peticion(void* pet) {
         readLine(local_sc, temp, ARR_SIZE); // username
         printf("disconnect %s\n", temp); 
         int result = 0;
+
+        pthread_mutex_lock(&mutex_hilos);
         int index = searchUser(usuarios, temp);
         if (index != -1) {
             if ( usuarios->users[index].conected) {
@@ -111,6 +129,8 @@ int tratar_peticion(void* pet) {
         } else {
             result = 1;
         }
+        pthread_mutex_unlock(&mutex_hilos);
+
         sprintf(temp, "%i", result);
         writeLine(local_sc, temp);
 
@@ -122,7 +142,11 @@ int tratar_peticion(void* pet) {
         readLine(local_sc, fileName, ARR_SIZE); // read fileName
         readLine(local_sc, description, ARR_SIZE); // read description
         readLine(local_sc, username, ARR_SIZE); // read username
+        
+        pthread_mutex_lock(&mutex_hilos);
         int result = addContent(usuarios, username, fileName, description);
+        pthread_mutex_unlock(&mutex_hilos);
+        
         sprintf(temp, "%i", result);
         writeLine(local_sc, temp);
 
@@ -132,6 +156,8 @@ int tratar_peticion(void* pet) {
         readLine(local_sc, username, ARR_SIZE); // read username
         readLine(local_sc, fileName, ARR_SIZE); // read fileName
         printf("delete ( %s, %s )\n", username, fileName);
+        
+        pthread_mutex_lock(&mutex_hilos);
         int index = searchUser(usuarios, username);
         int result = 0;
         if (index != -1) {
@@ -144,6 +170,8 @@ int tratar_peticion(void* pet) {
         } else {
             result = 1;
         }
+        pthread_mutex_unlock(&mutex_hilos);
+
         sprintf(temp, "%i", result);
         writeLine(local_sc, temp);
 
@@ -154,6 +182,7 @@ int tratar_peticion(void* pet) {
         sprintf(temp, "%i", 0); // se procesa la operacion correctamente
         writeLine(local_sc, temp);
 
+        pthread_mutex_lock(&mutex_hilos);
         int num_users = usuarios->size;
         for (int i = 0; i < num_users; ++i) {
             user curr = usuarios->users[i];
@@ -164,11 +193,14 @@ int tratar_peticion(void* pet) {
             sprintf(temp, "%i", curr.port);
             writeLine(local_sc, temp);
         }
+        pthread_mutex_unlock(&mutex_hilos);
+
 
 
     } else if (strcmp(temp, "LIST_CONTENT") == 0) {
         readLine(local_sc, temp, ARR_SIZE); // username
         printf("list_content %s\n", temp);
+        pthread_mutex_lock(&mutex_hilos);
         int index = searchUser(usuarios, temp);
         if (-1 == index) {
             // user does not exists 
@@ -193,6 +225,8 @@ int tratar_peticion(void* pet) {
                 writeLine(local_sc, usuarios->users[index].contents[i].description);
             }
         }
+        pthread_mutex_unlock(&mutex_hilos);
+
 
         
     } else {
@@ -206,6 +240,7 @@ int tratar_peticion(void* pet) {
 
 int main(int argc, char* argv[]) {
     pthread_mutex_init(&mutex, NULL);
+    pthread_mutex_init(&mutex_hilos, NULL);
     usuarios = createUserList();
 
     signal(SIGINT, stop_server);
