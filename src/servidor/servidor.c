@@ -20,7 +20,7 @@ user_list usuarios;
  *  "DISCONNECT" username -> int
  *  "PUBLISH" fileName, description, username -> int
  *  "DELETE" username, fileName -> int
- *  "LIST_USERS" -> int, username, ip, port
+ *  "LIST_USERS" -> int (result), int (num_users), (username, ip, port)*num_users
  *  "LIST_CONTENT", username -> int, int (num_elem), (filename, file_description) * num_elem
 */
 
@@ -119,21 +119,81 @@ int tratar_peticion(void* pet) {
         char fileName[ARR_SIZE];
         char description[ARR_SIZE];
         char username[ARR_SIZE];
-        readLine(local_sc, fileName, ARR_SIZE);
-        readLine(local_sc, description, ARR_SIZE);
-        readLine(local_sc, username, ARR_SIZE);
+        readLine(local_sc, fileName, ARR_SIZE); // read fileName
+        readLine(local_sc, description, ARR_SIZE); // read description
+        readLine(local_sc, username, ARR_SIZE); // read username
         int result = addContent(usuarios, username, fileName, description);
         sprintf(temp, "%i", result);
         writeLine(local_sc, temp);
 
     } else if (strcmp(temp, "DELETE") == 0) {
-        printf("delete\n"); 
+        char fileName[ARR_SIZE];
+        char username[ARR_SIZE];
+        readLine(local_sc, username, ARR_SIZE); // read username
+        readLine(local_sc, fileName, ARR_SIZE); // read fileName
+        printf("delete ( %s, %s )\n", username, fileName);
+        int index = searchUser(usuarios, username);
+        int result = 0;
+        if (index != -1) {
+            if ( usuarios->users[index].conected) {
+                result = removeContent(usuarios, username, fileName);
+                
+            } else {
+                result = 2;
+            }
+        } else {
+            result = 1;
+        }
+        sprintf(temp, "%i", result);
+        writeLine(local_sc, temp);
+
         
     } else if (strcmp(temp, "LIST_USERS") == 0) {
         printf("list_users\n"); 
 
+        sprintf(temp, "%i", 0); // se procesa la operacion correctamente
+        writeLine(local_sc, temp);
+
+        int num_users = usuarios->size;
+        for (int i = 0; i < num_users; ++i) {
+            user curr = usuarios->users[i];
+            sprintf(temp, "%s", curr.name);
+            writeLine(local_sc, temp);
+            sprintf(temp, "%s", curr.ip);
+            writeLine(local_sc, temp);
+            sprintf(temp, "%i", curr.port);
+            writeLine(local_sc, temp);
+        }
+
+
     } else if (strcmp(temp, "LIST_CONTENT") == 0) {
-        printf("list_content\n"); 
+        readLine(local_sc, temp, ARR_SIZE); // username
+        printf("list_content %s\n", temp);
+        int index = searchUser(usuarios, temp);
+        if (-1 == index) {
+            // user does not exists 
+            sprintf(temp, "%i", 1);
+            printf("User does not exists\n");
+
+        } else {
+            printf("listando contenidos:\n");
+
+            sprintf(temp, "%i", 0);
+            writeLine(local_sc, temp);
+            
+            sprintf(temp, "%i", usuarios->users[index].contentsLen); // tamaño de la lista
+            if(writeLine(local_sc, temp) < 0) {
+                printf("error shoket\n");
+            }
+            printf("%s\n", temp);
+            for (int i = 0; i < usuarios->users[index].contentsLen; ++i) {
+                printf("--%s %s\n", usuarios->users[index].contents[i].name, usuarios->users[index].contents[i].description);
+
+                writeLine(local_sc, usuarios->users[index].contents[i].name);
+                writeLine(local_sc, usuarios->users[index].contents[i].description);
+            }
+        }
+
         
     } else {
         fprintf(stderr, "server: not recognised operation (%s)\n", temp);

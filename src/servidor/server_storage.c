@@ -38,7 +38,7 @@ int searchContent(user *generoso, char *file_name) {
 
         }
     }
-    perror("removeContent: file not found");
+    perror("searchContent: file not found");
     return -1;
 }
 
@@ -151,7 +151,7 @@ int removeContent(user_list users, char *user_name, char* file_name) {
     /*validacion*/
     if (strlen(file_name) < 1 || strlen(file_name) > CHARSIZE) {
         fprintf(stderr, "removeContent: filename not valid\n");
-        return -1;
+        return 4;
     }
 
     int index = searchUser(users, user_name);
