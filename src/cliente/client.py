@@ -420,7 +420,7 @@ class client :
             message = b'LIST_CONTENT\0'
             serv_sock.sendall(message)
 
-            message = f"{client._username}\0".encode()
+            message = f"{user}\0".encode()
             serv_sock.sendall(message)
 
             message = f"{user}\0".encode()
