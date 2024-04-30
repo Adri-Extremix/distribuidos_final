@@ -184,6 +184,8 @@ int tratar_peticion(void* pet) {
 
         pthread_mutex_lock(&mutex_hilos);
         int num_users = usuarios->size;
+        sprintf(temp, "%i", num_users); // se procesa la operacion correctamente
+        writeLine(local_sc, temp);
         for (int i = 0; i < num_users; ++i) {
             user curr = usuarios->users[i];
             sprintf(temp, "%s", curr.name);

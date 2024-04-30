@@ -399,7 +399,7 @@ class client :
             case 0:
                 print("LIST_USERS OK")
 
-                for dict_user in range(list_users):
+                for dict_user in list_users:
                     # Imprimo el listado de usuarios
                     print(f"{dict_user['username']} {dict_user['ip']} {dict_user['port']}")
 
