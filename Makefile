@@ -32,5 +32,5 @@ clean:
 	rm *.o
 
 DonLimpio:
-	rm *.o
+	rm *.o servidor
 

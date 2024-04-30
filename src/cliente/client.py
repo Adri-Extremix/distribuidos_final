@@ -112,12 +112,11 @@ class client :
     def _client_listen(sock):
         # Función que realiza el hilo secundario del cliente
         # para atender a otros clientes
-        print("Hola soy un hilo")
         sock.listen(5)
+        sock.settimeout(2.0) # Timeout para que no se quede bloqueado en el accept
         print("Escucho peticiones")
         while not client._stop_event.is_set():
             try:
-                print("Intento aceptar una conexion")
                 connection, client_address = sock.accept()
                 try:
                     message = client._read_string(connection)
@@ -150,6 +149,8 @@ class client :
 
                 finally:
                     connection.close()
+            except socket.timeout:
+                continue
             except OSError:
                 print("Socket cerrado mientras se esperaba una conexión")
                 return
@@ -244,6 +245,7 @@ class client :
                     print("DISCONNECT OK")
                     client._stop_event.set()
                     client._p2p_thread.join()
+                    print("Recojo el hilo")
                     client._sock.close()
                     client._username = None
                 case 1:
@@ -341,7 +343,8 @@ class client :
     @staticmethod
     def get_list_users()->tuple:
         """ 
-         @return Devuelve un tupla, tupla[0] es el código de error y tupla[1] es una lista de diccionarios """
+         @return Devuelve un tupla, tupla[0] es el código de error y tupla[1] es una lista de diccionarios 
+        """
         serv_sock = client._get_socket(client._server,client._port)
 
         try:
@@ -355,6 +358,7 @@ class client :
 
             answer = int(serv_sock.recv(1).decode())
             ret_list = []
+            print("la respuesta en la función interna es:",answer)
             match answer:
                 case 0:
                     
@@ -369,7 +373,7 @@ class client :
                         ret_dict["username"] = client._read_string(serv_sock)
                         ret_dict["ip"] = client._read_string(serv_sock)
                         ret_dict["port"] = client._read_string(serv_sock)
-
+                        print("El diccionario es:",ret_dict)
                         ret_list.append(ret_dict)
                     return 0,ret_list
 
@@ -380,6 +384,7 @@ class client :
                 case _:
                     return None,ret_list
         except Exception as e:
+            print(e)
             return None,[]
         
         finally:
@@ -391,7 +396,6 @@ class client :
     def  listusers():
 
         answer, list_users = client.get_list_users()
-
         match answer:
             case 0:
                 print("LIST_USERS OK")
@@ -405,7 +409,7 @@ class client :
             case 2:
                 print("LIST_USERS FAIL, USER NOT CONNECTED")
             case _:
-                print("DELETE FAIL")
+                print("LIST_USERS FAIL")
 
         return answer
 
