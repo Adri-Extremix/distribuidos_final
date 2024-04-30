@@ -33,7 +33,7 @@ class client :
             if(msg == b'\0'):
                 break
             message += msg.decode()
-        message = message + '\0'
+        message = message
 
         return message
     @staticmethod
@@ -77,10 +77,12 @@ class client :
 
             message = ""
 
-            answer = int(serv_sock.recv(1).decode())
+            answer = int(client._read_string(serv_sock))
+            print("La respuesta es",answer)
 
         except Exception as e:
             answer = None
+            print(e)
             
         finally:
             serv_sock.close()
@@ -188,7 +190,7 @@ class client :
 
             message = ""
 
-            answer = int(serv_sock.recv(1).decode())
+            answer = int(client._read_string(serv_sock))
 
         except Exception as e:
             print("Ha dado una excepción")
@@ -232,7 +234,7 @@ class client :
 
             message = ""
 
-            answer = int(serv_sock.recv(1).decode())
+            answer = int(client._read_string(serv_sock))
 
         except Exception as e:
             answer = None
@@ -277,7 +279,7 @@ class client :
 
             message = ""
 
-            answer = int(serv_sock.recv(1).decode())
+            answer = int(client._read_string(serv_sock))
         except Exception as e:
             answer = None
 
@@ -317,7 +319,7 @@ class client :
 
             message = ""
 
-            answer = int(serv_sock.recv(1).decode())
+            answer = int(client._read_string(serv_sock))
 
         except Exception as e:
             answer = None
@@ -356,13 +358,10 @@ class client :
 
             message = ""
 
-            answer = int(serv_sock.recv(1).decode())
+            answer = int(client._read_string(serv_sock))
             ret_list = []
-            print("la respuesta en la función interna es:",answer)
             match answer:
                 case 0:
-                    
-                    print("LIST_USERS OK")
 
                     message = client._read_string(serv_sock)
                     num = int(message)
@@ -427,7 +426,7 @@ class client :
             message = f"{user}\0".encode()
             serv_sock.sendall(message)
 
-            answer = int(serv_sock.recv(1).decode())
+            answer = int(client._read_string(serv_sock))
 
             match answer:
                 case 0:
