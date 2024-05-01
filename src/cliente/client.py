@@ -3,6 +3,7 @@ import argparse
 import socket
 import threading
 import sys
+import zeep
 
 class client :
 
@@ -63,6 +64,12 @@ class client :
         server_address = (ip,port)
         sock.connect(server_address)
         return sock
+    
+    @staticmethod
+    def _read_time():
+        wsdl = 'http://localhost:8000/?wsdl'
+        client = zeep.Client(wsdl=wsdl)
+        print(client.service.get_time())
 
     @staticmethod
     def _reg_unreg(user:str, reg_unreg:str):
@@ -77,7 +84,7 @@ class client :
 
             message = ""
 
-            answer = int(client._read_string(serv_sock))
+            answer = int(serv_sock.recv(1).decode())
             print("La respuesta es",answer)
 
         except Exception as e:
@@ -115,7 +122,7 @@ class client :
         # Función que realiza el hilo secundario del cliente
         # para atender a otros clientes
         sock.listen(5)
-        sock.settimeout(2.0) # Timeout para que no se quede bloqueado en el accept
+        #sock.settimeout(2.0) # Timeout para que no se quede bloqueado en el accept
         print("Escucho peticiones")
         while not client._stop_event.is_set():
             try:
@@ -151,11 +158,10 @@ class client :
 
                 finally:
                     connection.close()
-            except socket.timeout:
-                continue
-            except OSError:
-                print("Socket cerrado mientras se esperaba una conexión")
-                return
+            except OSError as e:
+                if e.errno == 22:
+                    print("Fin del hilo")
+                    return 
         
 
     @staticmethod
@@ -190,7 +196,7 @@ class client :
 
             message = ""
 
-            answer = int(client._read_string(serv_sock))
+            answer = int(serv_sock.recv(1).decode())
 
         except Exception as e:
             print("Ha dado una excepción")
@@ -234,7 +240,7 @@ class client :
 
             message = ""
 
-            answer = int(client._read_string(serv_sock))
+            answer = int(serv_sock.recv(1).decode())
 
         except Exception as e:
             answer = None
@@ -246,9 +252,11 @@ class client :
                 case 0:
                     print("DISCONNECT OK")
                     client._stop_event.set()
-                    client._p2p_thread.join()
                     print("Recojo el hilo")
+                    client._sock.shutdown(socket.SHUT_RDWR)
                     client._sock.close()
+                    client._p2p_thread.join()
+
                     client._username = None
                 case 1:
                     print("DISCONNECT FAIL / USER DOES NOT EXIST")
@@ -279,7 +287,7 @@ class client :
 
             message = ""
 
-            answer = int(client._read_string(serv_sock))
+            answer = int(serv_sock.recv(1).decode())
         except Exception as e:
             answer = None
 
@@ -319,7 +327,7 @@ class client :
 
             message = ""
 
-            answer = int(client._read_string(serv_sock))
+            answer = int(serv_sock.recv(1).decode())
 
         except Exception as e:
             answer = None
@@ -358,7 +366,7 @@ class client :
 
             message = ""
 
-            answer = int(client._read_string(serv_sock))
+            answer = int(serv_sock.recv(1).decode())
             ret_list = []
             match answer:
                 case 0:
@@ -426,7 +434,7 @@ class client :
             message = f"{user}\0".encode()
             serv_sock.sendall(message)
 
-            answer = int(client._read_string(serv_sock))
+            answer = int(serv_sock.recv(1).decode())
 
             match answer:
                 case 0:
@@ -569,6 +577,7 @@ class client :
 
                     elif(line[0]=="QUIT") :
                         if (len(line) == 1) :
+                            client._read_time()
                             if client._username != None:
                                 client.disconnect(client._username)
                             break
