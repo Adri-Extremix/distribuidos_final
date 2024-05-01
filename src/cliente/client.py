@@ -84,7 +84,7 @@ class client :
 
             message = ""
 
-            answer = int(serv_sock.recv(1).decode())
+            answer = int.from_bytes(serv_sock.recv(1))
             print("La respuesta es",answer)
 
         except Exception as e:
@@ -196,7 +196,7 @@ class client :
 
             message = ""
 
-            answer = int(serv_sock.recv(1).decode())
+            answer = int.from_bytes(serv_sock.recv(1))
 
         except Exception as e:
             print("Ha dado una excepción")
@@ -240,7 +240,7 @@ class client :
 
             message = ""
 
-            answer = int(serv_sock.recv(1).decode())
+            answer = int.from_bytes(serv_sock.recv(1))
 
         except Exception as e:
             answer = None
@@ -287,7 +287,7 @@ class client :
 
             message = ""
 
-            answer = int(serv_sock.recv(1).decode())
+            answer = int.from_bytes(serv_sock.recv(1))
         except Exception as e:
             answer = None
 
@@ -327,7 +327,7 @@ class client :
 
             message = ""
 
-            answer = int(serv_sock.recv(1).decode())
+            answer = int.from_bytes(serv_sock.recv(1))
 
         except Exception as e:
             answer = None
@@ -366,7 +366,7 @@ class client :
 
             message = ""
 
-            answer = int(serv_sock.recv(1).decode())
+            answer = int.from_bytes(serv_sock.recv(1))
             ret_list = []
             match answer:
                 case 0:
@@ -434,7 +434,7 @@ class client :
             message = f"{user}\0".encode()
             serv_sock.sendall(message)
 
-            answer = int(serv_sock.recv(1).decode())
+            answer = int.from_bytes(serv_sock.recv(1))
 
             match answer:
                 case 0:

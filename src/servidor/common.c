@@ -7,7 +7,7 @@ int serverSocket(unsigned int addr, int port, int type) {
     // Crear socket
     sd = socket(AF_INET, type, 0);
     if (sd < 0) {
-        printf("SERVER: Error en el socket\n");
+        perror("SERVER: Error en el socket\n");
         return (0);
     }
 
@@ -24,14 +24,14 @@ int serverSocket(unsigned int addr, int port, int type) {
     // Bind
     ret = bind(sd, (const struct sockaddr*)&server_addr, sizeof(server_addr));
     if (ret == -1) {
-        printf("Error en bind\n");
+        perror("Error en bind\n");
         return -1;
     }
 
     // Listen
     ret = listen(sd, SOMAXCONN);
     if (ret == -1) {
-        printf("Error en listen\n");
+        perror("Error en listen\n");
         return -1;
     }
 
@@ -43,19 +43,18 @@ int serverAccept(int sd, struct sockaddr_in *returnIp) {
     struct sockaddr_in client_addr;
     socklen_t size;
 
-    printf("esperando conexion...\n");
+    //printf("esperando conexion...\n");
 
     size = sizeof(client_addr);
     sc = accept(sd, (struct sockaddr*)&client_addr, (socklen_t*)&size);
     if (sc < 0) {
-        printf("Error en accept\n");
+        perror("Error en accept\n");
         return -1;
     }
 
-    printf("conexión aceptada de IP: %s y puerto: %d\n",
-        inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+    //printf("conexión aceptada de IP: %s y puerto: %d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
     
-    memcpy(returnIp, &client_addr, sizeof(client_addr));
+    memcpy(returnIp, &client_addr, sizeof(client_addr)); // get client ip
 
     return sc;
 }
@@ -67,13 +66,13 @@ int clientSocket(char* remote, int port) {
 
     sd = socket(AF_INET, SOCK_STREAM, 0);
     if (sd < 0) {
-        printf("Error en socket\n");
+        perror("Error en socket\n");
         return -1;
     }
 
     hp = gethostbyname(remote);
     if (hp == NULL) {
-        printf("Error en gethostbyname\n");
+        perror("Error en gethostbyname\n");
         return -1;
     }
 
@@ -84,7 +83,7 @@ int clientSocket(char* remote, int port) {
 
     ret = connect(sd, (struct sockaddr*)&server_addr, sizeof(server_addr));
     if (ret < 0) {
-        printf("Error en connect\n");
+        perror("Error en connect\n");
         return -1;
     }
 

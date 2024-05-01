@@ -12,12 +12,13 @@
 int createUser(user *usr, char *name, char *ip, int port) {
     /*validacion*/
     if (strlen(name) < 1 || strlen(name) > CHARSIZE) {
-        fprintf(stderr, "createUser: user_name not valid\n");
+        //fprintf(stderr, "createUser: user_name not valid\n");
         return -1;
     }
 
     if (strlen(ip) < 1 || strlen(ip) > CHARSIZE) {
-        fprintf(stderr, "createUser: ip not valid\n");
+        //fprintf(stderr, "createUser: ip not valid\n");
+        return -1;
     }
 
     strcpy(usr->name, name);
@@ -38,7 +39,7 @@ int searchContent(user *generoso, char *file_name) {
 
         }
     }
-    perror("searchContent: file not found");
+    //perror("searchContent: file not found");
     return -1;
 }
 
@@ -79,7 +80,7 @@ int searchUser(user_list users, char *user_name) {
             return i;
         }
     }
-    perror("searchUser: user not found");
+    //perror("searchUser: user not found");
     return -1;
 }
 
@@ -88,7 +89,7 @@ int addUser(user_list users, char *user_name, char *ip, int port) {
         expandSpace(users);
     }
     if (searchUser(users, user_name) != -1) {
-        perror("addUser: usuario ya existente");
+        //perror("addUser: usuario ya existente");
         return 1;
     }
     user newusr;
@@ -96,14 +97,14 @@ int addUser(user_list users, char *user_name, char *ip, int port) {
         users->users[users->size++] = newusr;
         return 0;
     }
-    perror("addUser: error in createUser");
+    //perror("addUser: error in createUser");
     return 2;
 }
 
 int removeUser(user_list users, char *user_name) {
     int index = searchUser(users, user_name); // si la lista está vacía se detectará aquí
     if (index == -1) {
-        perror("removeUser: error in searchUser");
+        //perror("removeUser: error in searchUser");
         return 1;
     }
     user penitente = users->users[index];
@@ -115,21 +116,21 @@ int removeUser(user_list users, char *user_name) {
 int addContent(user_list users, char *user_name, char* file_name, char* description) {
     /*validacion*/
     if (strlen(file_name) < 1 || strlen(file_name) > CHARSIZE) {
-        fprintf(stderr, "addContent: file_name not valid\n");
+        //fprintf(stderr, "addContent: file_name not valid\n");
         return 4;
     }
 
     if (strlen(description) < 1 || strlen(description) > CHARSIZE) {
-        fprintf(stderr, "addContent: description not valid\n");
+        //fprintf(stderr, "addContent: description not valid\n");
         return 4;
     }
     int index = searchUser(users, user_name);
     if (index == -1) {
-        perror("addContent: error in searchUser");
+        //perror("addContent: error in searchUser");
         return 1;
     }
     if (!users->users[index].conected) {
-        perror("addContent: user not connected");
+        //perror("addContent: user not connected");
         return 2;
     }
     user *generoso = &(users->users[index]);
@@ -138,7 +139,7 @@ int addContent(user_list users, char *user_name, char* file_name, char* descript
     }
     int i = searchContent(generoso, file_name);
     if (i != -1) {
-        perror("addContent: file already exists");
+        //perror("addContent: file already exists");
         return 3;
     }
     strcpy(generoso->contents[generoso->contentsLen].name, file_name);
@@ -150,19 +151,19 @@ int addContent(user_list users, char *user_name, char* file_name, char* descript
 int removeContent(user_list users, char *user_name, char* file_name) {
     /*validacion*/
     if (strlen(file_name) < 1 || strlen(file_name) > CHARSIZE) {
-        fprintf(stderr, "removeContent: filename not valid\n");
+        //fprintf(stderr, "removeContent: filename not valid\n");
         return 4;
     }
 
     int index = searchUser(users, user_name);
     if (index == -1) {
-        perror("removeUser: error in searchUser");
+        //perror("removeUser: error in searchUser");
         return 1;
     }
     user *generoso = &(users->users[index]);
     int i = searchContent(generoso, file_name);
     if (i == -1) {
-        perror("removeContent: file not found");
+        //perror("removeContent: file not found");
         return 3;
     }
 
