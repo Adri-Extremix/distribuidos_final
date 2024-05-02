@@ -91,16 +91,19 @@ int tratar_peticion(void* pet) {
         sendMessage(local_sc, &to_send_result, 1);
 
     } else if (strcmp(temp, "CONNECT") == 0) {
-        readLine(local_sc, temp, ARR_SIZE); // username
+        char username[ARR_SIZE];
+        readLine(local_sc, username, ARR_SIZE); // username
+        readLine(local_sc, temp, ARR_SIZE); // port
         //printf("connect %s\n", temp); 
         int result = 0;
 
         pthread_mutex_lock(&mutex_hilos);
-        int index = searchUser(usuarios, temp);
+        int index = searchUser(usuarios, username);
 
         if (index != -1) {
             if (! usuarios->users[index].conected) {
                 usuarios->users[index].conected = 1;
+                usuarios->users[index].port = atoi(temp);
                 result = 0;
                 //printf("connect complete\n");
             } else {
