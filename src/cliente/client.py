@@ -68,8 +68,11 @@ class client :
     @staticmethod
     def _read_time():
         wsdl = 'http://localhost:8000/?wsdl'
-        client = zeep.Client(wsdl=wsdl)
-        print(client.service.get_time())
+        try:
+            client = zeep.Client(wsdl=wsdl)
+            print(client.service.get_time())
+        except Exception as e:
+            print(f"Error al conectar con el servidor web: {e}")
 
     @staticmethod
     def _reg_unreg(user:str, reg_unreg:str):
@@ -84,8 +87,7 @@ class client :
 
             message = ""
 
-            answer = int.from_bytes(serv_sock.recv(1))
-            print("La respuesta es",answer)
+            answer = int.from_bytes(serv_sock.recv(1), 'big')
 
         except Exception as e:
             answer = None
@@ -125,6 +127,7 @@ class client :
         #sock.settimeout(2.0) # Timeout para que no se quede bloqueado en el accept
         print("Escucho peticiones")
         while not client._stop_event.is_set():
+
             try:
                 connection, client_address = sock.accept()
                 try:
@@ -188,15 +191,17 @@ class client :
             ip_address = socket.gethostbyname(socket.gethostname())
             server_address = (ip_address,0) # el puerto 0 toma un puerto libre
             sock.bind(server_address)
-
             address, port = sock.getsockname() # Obtengo el puerto asignado
+
+            print(f"IP del socket: {address}")
+            print(f"Puerto del socket: {port}")
 
             message = f"{port}\0".encode()
             serv_sock.sendall(message)
 
             message = ""
 
-            answer = int.from_bytes(serv_sock.recv(1))
+            answer = int.from_bytes(serv_sock.recv(1), 'big')
 
         except Exception as e:
             print("Ha dado una excepción")
@@ -240,7 +245,7 @@ class client :
 
             message = ""
 
-            answer = int.from_bytes(serv_sock.recv(1))
+            answer = int.from_bytes(serv_sock.recv(1), 'big')
 
         except Exception as e:
             answer = None
@@ -276,18 +281,18 @@ class client :
             message = b'PUBLISH\0'
             serv_sock.sendall(message)
 
+            message = f"{client._username}\0".encode()
+            serv_sock.sendall(message)
+
             message = f"{fileName}\0".encode()
             serv_sock.sendall(message)
 
             message = f"{description}\0".encode()
             serv_sock.sendall(message)
 
-            message = f"{client._username}\0".encode()
-            serv_sock.sendall(message)
-
             message = ""
 
-            answer = int.from_bytes(serv_sock.recv(1))
+            answer = int.from_bytes(serv_sock.recv(1), 'big')
         except Exception as e:
             answer = None
 
@@ -327,7 +332,7 @@ class client :
 
             message = ""
 
-            answer = int.from_bytes(serv_sock.recv(1))
+            answer = int.from_bytes(serv_sock.recv(1), 'big')
 
         except Exception as e:
             answer = None
@@ -366,7 +371,7 @@ class client :
 
             message = ""
 
-            answer = int.from_bytes(serv_sock.recv(1))
+            answer = int.from_bytes(serv_sock.recv(1), 'big')
             ret_list = []
             match answer:
                 case 0:
@@ -380,7 +385,6 @@ class client :
                         ret_dict["username"] = client._read_string(serv_sock)
                         ret_dict["ip"] = client._read_string(serv_sock)
                         ret_dict["port"] = client._read_string(serv_sock)
-                        print("El diccionario es:",ret_dict)
                         ret_list.append(ret_dict)
                     return 0,ret_list
 
@@ -434,7 +438,7 @@ class client :
             message = f"{user}\0".encode()
             serv_sock.sendall(message)
 
-            answer = int.from_bytes(serv_sock.recv(1))
+            answer = int.from_bytes(serv_sock.recv(1), 'big')
 
             match answer:
                 case 0:
@@ -471,10 +475,9 @@ class client :
     def  getfile(user,  remote_FileName,  local_FileName) :
         
         answer, list_users = client.get_list_users()
-
         for dict_user in list_users:
             if dict_user["username"] == user:
-                client_sock = client._get_socket(dict_user["ip"],dict_user["port"])
+                client_sock = client._get_socket(dict_user["ip"],int(dict_user["port"]))
                 break
         
         try:

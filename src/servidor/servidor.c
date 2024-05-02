@@ -10,10 +10,10 @@
 const int CHAR_SIZE = 256;
 const int ARR_SIZE = 1024;
 
-user_list usuarios; 
+user_list usuarios;
 
 /**
- *  
+ *
  *  "REGISTER" username -> int
  *  "UNREGISTER" username -> int
  *  "CONNECT" username -> int
@@ -40,13 +40,13 @@ void stop_server() {
 
 typedef struct p {
     int sc;
-    struct sockaddr_in client; 
-} peticion; 
+    struct sockaddr_in client;
+} peticion;
 
 int tratar_peticion(void* pet) {
     int local_sc;
     char ip[32];
-    int port = 0;  
+    int port = 0;
     char temp[ARR_SIZE];
 
     pthread_mutex_lock(&mutex);
@@ -72,25 +72,27 @@ int tratar_peticion(void* pet) {
         pthread_mutex_lock(&mutex_hilos); // acceso a la estructura
         int result = addUser(usuarios, temp, ip, port);
         pthread_mutex_unlock(&mutex_hilos);
-        int8_t to_send_result = (int8_t) result;
+        int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
         sendMessage(local_sc, &to_send_result, 1);
 
-    } else if (strcmp(temp, "UNREGISTER") == 0) {
-         // leer nombre de usuario
+    }
+    else if (strcmp(temp, "UNREGISTER") == 0) {
+        // leer nombre de usuario
         readLine(local_sc, temp, ARR_SIZE);
         //printf("unregister %s\n", temp);
 
         pthread_mutex_lock(&mutex_hilos);
         int result = removeUser(usuarios, temp);
         pthread_mutex_unlock(&mutex_hilos);
-        
-        
-        int8_t to_send_result = (int8_t) result;
+
+
+        int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
         sendMessage(local_sc, &to_send_result, 1);
 
-    } else if (strcmp(temp, "CONNECT") == 0) {
+    }
+    else if (strcmp(temp, "CONNECT") == 0) {
         readLine(local_sc, temp, ARR_SIZE); // username
         //printf("connect %s\n", temp); 
         int result = 0;
@@ -99,24 +101,27 @@ int tratar_peticion(void* pet) {
         int index = searchUser(usuarios, temp);
 
         if (index != -1) {
-            if (! usuarios->users[index].conected) {
+            if (!usuarios->users[index].conected) {
                 usuarios->users[index].conected = 1;
                 result = 0;
                 //printf("connect complete\n");
-            } else {
+            }
+            else {
                 result = 2;
             }
-        } else {
+        }
+        else {
             result = 1;
         }
         pthread_mutex_unlock(&mutex_hilos);
 
-        int8_t to_send_result = (int8_t) result;
+        int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
         sendMessage(local_sc, &to_send_result, 1);
 
 
-    } else if (strcmp(temp, "DISCONNECT") == 0) {
+    }
+    else if (strcmp(temp, "DISCONNECT") == 0) {
         readLine(local_sc, temp, ARR_SIZE); // username
         //printf("disconnect %s\n", temp); 
         int result = 0;
@@ -124,69 +129,77 @@ int tratar_peticion(void* pet) {
         pthread_mutex_lock(&mutex_hilos);
         int index = searchUser(usuarios, temp);
         if (index != -1) {
-            if ( usuarios->users[index].conected) {
+            if (usuarios->users[index].conected) {
                 usuarios->users[index].conected = 0;
                 result = 0;
-            } else {
+            }
+            else {
                 result = 2;
             }
-        } else {
+        }
+        else {
             result = 1;
         }
         pthread_mutex_unlock(&mutex_hilos);
 
-        int8_t to_send_result = (int8_t) result;
+        int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
         sendMessage(local_sc, &to_send_result, 1);
 
-    } else if (strcmp(temp, "PUBLISH") == 0) {
+    }
+    else if (strcmp(temp, "PUBLISH") == 0) {
         //printf("publish\n"); 
         char fileName[ARR_SIZE];
         char description[ARR_SIZE];
         char username[ARR_SIZE];
         readLine(local_sc, username, ARR_SIZE); // read username
+        printf("Este es el nombre del usuario %s\n", username);
         readLine(local_sc, fileName, ARR_SIZE); // read fileName
         readLine(local_sc, description, ARR_SIZE); // read description
-        
+
         pthread_mutex_lock(&mutex_hilos);
         int result = addContent(usuarios, username, fileName, description);
         pthread_mutex_unlock(&mutex_hilos);
-        
-        int8_t to_send_result = (int8_t) result;
+
+        int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
         sendMessage(local_sc, &to_send_result, 1);
 
-    } else if (strcmp(temp, "DELETE") == 0) {
+    }
+    else if (strcmp(temp, "DELETE") == 0) {
         char fileName[ARR_SIZE];
         char username[ARR_SIZE];
         readLine(local_sc, username, ARR_SIZE); // read username
         readLine(local_sc, fileName, ARR_SIZE); // read fileName
         //printf("delete ( %s, %s )\n", username, fileName);
-        
+
         pthread_mutex_lock(&mutex_hilos);
         int index = searchUser(usuarios, username);
         int result = 0;
         if (index != -1) {
-            if ( usuarios->users[index].conected) {
+            if (usuarios->users[index].conected) {
                 result = removeContent(usuarios, username, fileName);
-                
-            } else {
+
+            }
+            else {
                 result = 2;
             }
-        } else {
+        }
+        else {
             result = 1;
         }
         pthread_mutex_unlock(&mutex_hilos);
 
-        int8_t to_send_result = (int8_t) result;
+        int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
         sendMessage(local_sc, &to_send_result, 1);
 
-        
-    } else if (strcmp(temp, "LIST_USERS") == 0) {
+
+    }
+    else if (strcmp(temp, "LIST_USERS") == 0) {
         //printf("list_users\n"); 
 
-        int8_t to_send_result = (int8_t) 0;
+        int8_t to_send_result = (int8_t)0;
         // envio de resultado => 1 byte
         sendMessage(local_sc, &to_send_result, 1);
 
@@ -207,27 +220,29 @@ int tratar_peticion(void* pet) {
 
 
 
-    } else if (strcmp(temp, "LIST_CONTENT") == 0) {
+    }
+    else if (strcmp(temp, "LIST_CONTENT") == 0) {
         readLine(local_sc, temp, ARR_SIZE); // username
         //printf("list_content %s\n", temp);
         pthread_mutex_lock(&mutex_hilos);
         int index = searchUser(usuarios, temp);
         if (-1 == index) {
             // user does not exists 
-            int8_t to_send_result = (int8_t) 1;
+            int8_t to_send_result = (int8_t)1;
             // envio de resultado => 1 byte
             sendMessage(local_sc, &to_send_result, 1);
             //printf("User does not exists\n");
 
-        } else {
+        }
+        else {
             //printf("listando contenidos:\n");
 
-            int8_t to_send_result = (int8_t) 0;
+            int8_t to_send_result = (int8_t)0;
             // envio de resultado => 1 byte
             sendMessage(local_sc, &to_send_result, 1);
-            
+
             sprintf(temp, "%i", usuarios->users[index].contentsLen); // tamaño de la lista
-            if(writeLine(local_sc, temp) < 0) {
+            if (writeLine(local_sc, temp) < 0) {
                 //printf("error shoket\n");
             }
             //printf("%s\n", temp);
@@ -241,13 +256,14 @@ int tratar_peticion(void* pet) {
         pthread_mutex_unlock(&mutex_hilos);
 
 
-        
-    } else {
+
+    }
+    else {
         fprintf(stderr, "server: not recognised operation (%s)\n", temp);
     }
-    
+
     close(local_sc);
-//printf("finish: %i\n", local_sc);
+    //printf("finish: %i\n", local_sc);
     pthread_exit(NULL);
 }
 
@@ -257,23 +273,26 @@ int main(int argc, char* argv[]) {
     if (argc != 3) {
         printf("USAGE: %s %s %s\n", argv[0], "-p", "<port_number>");
         return -1;
-    } else if (strcmp(argv[1], "-p") != 0) {
+    }
+    else if (strcmp(argv[1], "-p") != 0) {
         printf("USAGE: %s %s %s\n", argv[0], "-p", "<port_number>");
         return -1;
-    } else if (atoi(argv[2]) == 0) {
+    }
+    else if (atoi(argv[2]) == 0) {
         printf("Port number must be numeric and greater than 0\n");
         return -1;
-    } else {
+    }
+    else {
         //everything alright 
     }
-    
+
     // print ip
     char hostname[256];
 
     gethostname(hostname, sizeof(hostname));
     struct hostent* hp = gethostbyname(hostname);
     struct in_addr ip;
-    bcopy(hp->h_addr, (char*) &ip, sizeof(ip));
+    bcopy(hp->h_addr, (char*)&ip, sizeof(ip));
     char* ip_str = inet_ntoa(ip);
 
     printf("s> init server %s:%s\n", ip_str, argv[2]);
