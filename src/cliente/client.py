@@ -140,6 +140,7 @@ class client :
                         namefile = message
 
                         if namefile not in client._published:
+                            print("Archivo no publicado")
                             answer = 2
                             connection.sendall(answer.to_bytes(1,'big'))
                         else:
@@ -155,7 +156,8 @@ class client :
                             except FileNotFoundError:
                                 answer = 1
                                 connection.sendall(answer.to_bytes(1,'big'))
-                    else:    
+                    else:
+                        print("No he recibido GET_FILE")    
                         answer = 2
                         connection.sendall(answer.to_bytes(1,'big'))
 
@@ -195,6 +197,9 @@ class client :
 
             print(f"IP del socket: {address}")
             print(f"Puerto del socket: {port}")
+
+            message = f"{address}\0".encode()
+            serv_sock.sendall(message)
 
             message = f"{port}\0".encode()
             serv_sock.sendall(message)
@@ -395,7 +400,7 @@ class client :
                 case _:
                     return None,ret_list
         except Exception as e:
-            print(e)
+            print("Excepción en get_list_users",e)
             return None,[]
         
         finally:
@@ -475,6 +480,9 @@ class client :
     def  getfile(user,  remote_FileName,  local_FileName) :
         
         answer, list_users = client.get_list_users()
+        if answer != 0:
+            print("No se ha podido acceder a la lista de usuarios")
+            return answer
         for dict_user in list_users:
             if dict_user["username"] == user:
                 client_sock = client._get_socket(dict_user["ip"],int(dict_user["port"]))
@@ -487,8 +495,8 @@ class client :
             message = f"{remote_FileName}\0".encode()
             client_sock.sendall(message)
 
-            answer = int(client_sock.recv(1).decode())
-
+            answer = int.from_bytes(client_sock.recv(1), 'big')
+            print(answer)
             match answer:
                 case 0:
                     print("GET_FILE OK")
