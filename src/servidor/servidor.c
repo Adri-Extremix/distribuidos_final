@@ -93,8 +93,11 @@ int tratar_peticion(void* pet) {
 
     } else if (strcmp(temp, "CONNECT") == 0) {
         char username[ARR_SIZE];
+        char port[ARR_SIZE];
+        char sc_ip[ARR_SIZE];
         readLine(local_sc, username, ARR_SIZE); // username
-        readLine(local_sc, temp, ARR_SIZE); // port
+        readLine(local_sc, sc_ip, ARR_SIZE); // ip
+        readLine(local_sc, port, ARR_SIZE); // port
         //printf("connect %s\n", temp); 
         int result = 0;
 
@@ -104,8 +107,11 @@ int tratar_peticion(void* pet) {
         if (index != -1) {
             if (!usuarios->users[index].conected) {
                 usuarios->users[index].conected = 1;
-                usuarios->users[index].port = atoi(temp);
+                usuarios->users[index].port = atoi(port);
+                strcpy(usuarios->users[index].ip, sc_ip);
                 result = 0;
+                printf("--> %i\n", usuarios->users[index].port);
+                printf("--> %s\n", usuarios->users[index].ip);
                 //printf("connect complete\n");
             }
             else {
