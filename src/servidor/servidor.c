@@ -98,7 +98,7 @@ int tratar_peticion(void* pet) {
         readLine(local_sc, username, ARR_SIZE); // username
         readLine(local_sc, sc_ip, ARR_SIZE); // ip
         readLine(local_sc, port, ARR_SIZE); // port
-        //printf("connect %s\n", temp); 
+        printf("connect %s %s %s\n", username, sc_ip, port); 
         int result = 0;
 
         pthread_mutex_lock(&mutex_hilos);
@@ -205,26 +205,44 @@ int tratar_peticion(void* pet) {
 
     }
     else if (strcmp(temp, "LIST_USERS") == 0) {
-        //printf("list_users\n"); 
+        printf("list_users\n"); 
 
         int8_t to_send_result = (int8_t)0;
         // envio de resultado => 1 byte
         sendMessage(local_sc, &to_send_result, 1);
 
         pthread_mutex_lock(&mutex_hilos);
-        int num_users = usuarios->size;
+        
+        int num_users = 0;
+        for (int i = 0; i < usuarios->size; ++i) {
+            if (usuarios->users[i].conected)  num_users++;
+        }
         sprintf(temp, "%i", num_users); // se procesa la operacion correctamente
-        writeLine(local_sc, temp);
-        for (int i = 0; i < num_users; ++i) {
+        
+        if (writeLine(local_sc, temp) < 0) {
+                perror("error");
+            }
+        for (int i = 0; i < usuarios->size; ++i) {
+            
             user curr = usuarios->users[i];
-            sprintf(temp, "%s", curr.name);
-            writeLine(local_sc, temp);
-            sprintf(temp, "%s", curr.ip);
-            writeLine(local_sc, temp);
-            sprintf(temp, "%i", curr.port);
-            writeLine(local_sc, temp);
+            if (curr.conected) {
+                sprintf(temp, "%s", curr.name);
+                if (writeLine(local_sc, temp) < 0) {
+                    perror("error");
+                }
+                sprintf(temp, "%s", curr.ip);
+                if (writeLine(local_sc, temp) < 0) {
+                    perror("error");
+                }
+                sprintf(temp, "%i", curr.port);
+                if (writeLine(local_sc, temp) < 0) {
+                    perror("error");
+                }
+            }
+            
         }
         pthread_mutex_unlock(&mutex_hilos);
+        printf("complete list_users\n"); 
 
 
 
