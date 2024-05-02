@@ -132,12 +132,14 @@ class client :
                 connection, client_address = sock.accept()
                 try:
                     message = client._read_string(connection)
+                    print(">>!", message)
 
-                    if message == b'GET_FILE\0':
-                        
+                    if message == 'GET_FILE':
+                        print("paso1")
                         message = client._read_string(connection)
 
                         namefile = message
+                        print("--", message)
 
                         if namefile not in client._published:
                             print("Archivo no publicado")
@@ -145,17 +147,23 @@ class client :
                             connection.sendall(answer.to_bytes(1,'big'))
                         else:
                             try:
+                                print("enviando")
+                                answer = 0
+                                connection.sendall(answer.to_bytes(1,'big'))
                                 with open(namefile, mode="rb") as file:
                                     while True:
                                         chunk = file.read(1024)
                                         if not chunk:
                                             break
                                         connection.sendall(chunk)
-                                answer = 0
-                                connection.sendall(answer.to_bytes(1,'big'))
+                                
+                                print("enviado")
                             except FileNotFoundError:
                                 answer = 1
                                 connection.sendall(answer.to_bytes(1,'big'))
+                            except Exception as e:
+                                print(e)
+                                print("exception")
                     else:
                         print("No he recibido GET_FILE")    
                         answer = 2
