@@ -70,7 +70,9 @@ class client :
         wsdl = 'http://localhost:8000/?wsdl'
         try:
             client = zeep.Client(wsdl=wsdl)
-            print(client.service.get_time())
+            fecha = client.service.get_time() 
+            print(fecha)
+            return fecha
         except Exception as e:
             print(f"Error al conectar con el servidor web: {e}")
 
@@ -78,6 +80,7 @@ class client :
     def _reg_unreg(user:str, reg_unreg:str):
         # Función que se encarga de la funcionalidad de registro y darse de baja
         serv_sock = client._get_socket(client._server,client._port)
+        time = client._read_time()
         try:
             message = f"{reg_unreg}\0".encode()
             serv_sock.sendall(message)
@@ -184,6 +187,7 @@ class client :
             return 
         
         serv_sock = client._get_socket(client._server,client._port)
+        time = client._read_time()
 
         try:
             message = b'CONNECT\0'
@@ -247,6 +251,7 @@ class client :
     def  disconnect(user) :
 
         serv_sock = client._get_socket(client._server,client._port)
+        time = client._read_time()
 
         try:
             message = b'DISCONNECT\0'
@@ -288,6 +293,7 @@ class client :
     def  publish(fileName,  description) :
         
         serv_sock = client._get_socket(client._server,client._port)
+        time = client._read_time()
 
         try:
             message = b'PUBLISH\0'
@@ -331,6 +337,7 @@ class client :
     def  delete(fileName) :
 
         serv_sock = client._get_socket(client._server,client._port)
+        time = client._read_time()
 
         try:
             message = b'DELETE\0'
@@ -419,6 +426,8 @@ class client :
     def  listusers():
 
         answer, list_users = client.get_list_users()
+        time = client._read_time()
+
         match answer:
             case 0:
                 print("LIST_USERS OK")
@@ -439,6 +448,7 @@ class client :
     @staticmethod
     def  listcontent(user) :
         serv_sock = client._get_socket(client._server,client._port)
+        time = client._read_time()
 
         try:
             message = b'LIST_CONTENT\0'
@@ -487,6 +497,8 @@ class client :
     def  getfile(user,  remote_FileName,  local_FileName) :
         
         answer, list_users = client.get_list_users()
+        time = client._read_time()
+
         if answer != 0:
             print("No se ha podido acceder a la lista de usuarios")
             return answer
