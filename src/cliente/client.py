@@ -132,10 +132,9 @@ class client :
                 connection, client_address = sock.accept()
                 try:
                     message = client._read_string(connection)
-                    print(">>!", message)
 
-                    if message == 'GET_FILE':
-                        print("paso1")
+                    if message == "GET_FILE":
+                        
                         message = client._read_string(connection)
 
                         namefile = message
