@@ -6,6 +6,9 @@
 #include <string.h>
 #include "common.h"
 #include "server_storage.h"
+#include "../rpc/print.h"
+
+#define RPC_IP "RPC_IP"
 
 const int CHAR_SIZE = 256;
 const int ARR_SIZE = 1024;
@@ -36,6 +39,35 @@ void stop_server() {
     if (sd != 70000)
         close(sd);
     exit(0);
+}
+
+char* get_ip() {
+    char* ip = getenv(RPC_IP);
+    if (ip == NULL) {
+        perror("NOT setted ip");
+        return NULL;
+    }
+    return ip;
+}
+
+int send_rpc(char *username, char *operacion) {
+    char tmp[ARR_SIZE*2]; 
+    char timestamp[] = "17/12/2014 13:20:35"; // sustituir por conseguir timestamp
+    sprintf(tmp, "%s\t%s\t%s", username, operacion, timestamp);
+
+    char *rpc_ip = get_ip();
+
+    CLIENT *clnt = clnt_create (rpc_ip, PRINT, PRINTVER, "udp");
+	if (clnt == NULL) {
+		clnt_pcreateerror (rpc_ip);
+		perror("unable to connect to rpc_server");
+	}
+    int return_value = 234;
+    enum clnt_stat retval_1 = rpc_print_1(tmp, &return_value, clnt);
+    if (retval_1 != RPC_SUCCESS) {
+		clnt_perror (clnt, "call failed");
+	}
+    return return_value;
 }
 
 typedef struct p {
@@ -76,6 +108,8 @@ int tratar_peticion(void* pet) {
         // envio de resultado => 1 byte
         sendMessage(local_sc, &to_send_result, 1);
 
+        send_rpc(temp, "REGISTER");
+
     }
     else if (strcmp(temp, "UNREGISTER") == 0) {
         // leer nombre de usuario
@@ -90,6 +124,7 @@ int tratar_peticion(void* pet) {
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
         sendMessage(local_sc, &to_send_result, 1);
+        send_rpc(temp, "UNREGISTER");
 
     } else if (strcmp(temp, "CONNECT") == 0) {
         char username[ARR_SIZE];
@@ -126,6 +161,7 @@ int tratar_peticion(void* pet) {
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
         sendMessage(local_sc, &to_send_result, 1);
+        send_rpc(username, "CONNECT");
 
 
     }
@@ -153,6 +189,7 @@ int tratar_peticion(void* pet) {
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
         sendMessage(local_sc, &to_send_result, 1);
+        send_rpc(temp, "DISCONNECT");
 
     }
     else if (strcmp(temp, "PUBLISH") == 0) {
@@ -172,6 +209,10 @@ int tratar_peticion(void* pet) {
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
         sendMessage(local_sc, &to_send_result, 1);
+        
+        char cadena[ARR_SIZE];
+        sprintf(cadena, "%s %s", "PUBLISH", fileName);
+        send_rpc(username, cadena);
 
     }
     else if (strcmp(temp, "DELETE") == 0) {
@@ -201,7 +242,9 @@ int tratar_peticion(void* pet) {
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
         sendMessage(local_sc, &to_send_result, 1);
-
+        char cadena[ARR_SIZE];
+        sprintf(cadena, "%s %a", "PUBLISH", fileName);
+        send_rpc(username, cadena);
 
     }
     else if (strcmp(temp, "LIST_USERS") == 0) {
@@ -243,7 +286,8 @@ int tratar_peticion(void* pet) {
         }
         pthread_mutex_unlock(&mutex_hilos);
         printf("complete list_users\n"); 
-
+        
+        send_rpc("PACO", "LIST_USERS"); // TODO: NOMBRE USUARIO
 
 
     }
@@ -281,7 +325,8 @@ int tratar_peticion(void* pet) {
         }
         pthread_mutex_unlock(&mutex_hilos);
 
-
+        send_rpc("PACO", "LIST_CONTENT"); // TODO: NOMBRE USUARIO
+        
 
     }
     else {
@@ -294,7 +339,7 @@ int tratar_peticion(void* pet) {
 }
 
 int main(int argc, char* argv[]) {
-
+    //printf(">>%i\n", send_rpc("paco", "deposit 45"));
     // validate program input 
     if (argc != 3) {
         printf("USAGE: %s %s %s\n", argv[0], "-p", "<port_number>");

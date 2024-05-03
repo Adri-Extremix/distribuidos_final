@@ -9,8 +9,7 @@
 bool_t
 rpc_print_1_svc(char* impresion, int* result, struct svc_req* rqstp) {
 	bool_t retval;
-
-	int ret = printf("%s", impresion);
+	int ret = printf("%s\n", impresion);
 	if (ret == -1) *result = -1;
 	else *result = 0;
 
