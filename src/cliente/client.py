@@ -133,7 +133,7 @@ class client :
                 try:
                     message = client._read_string(connection)
 
-                    if message == b'GET_FILE\0':
+                    if message == "GET_FILE":
                         
                         message = client._read_string(connection)
 
