@@ -6,20 +6,22 @@
 \usepackage{listings}
 \usepackage{xcolor}
 
-
-\lstset{
-  language=C,
-  basicstyle=\ttfamily\small,
-  commentstyle=\color{gray},
-  keywordstyle=\color{blue},
-  stringstyle=\color{green},
-  numberstyle=\tiny\color{gray},
-  stepnumber=1,
-  showspaces=false,
-  showstringspaces=false,
-  tabsize=2,
-  breaklines=true, captionpos=false,
+\lstdefinestyle{mystyle} {
+    commentstyle=\color{gray},
+    keywordstyle=\color{blue},
+    numberstyle=\color{yellow},
+    stringstyle=\color{pink},
+    breaklines=true,
+    breakatwhitespace=false,
+    captionpos=b,
+    keepspaces=true,
+    numbers=none,
+    numbersep=5pt,
+    showspaces=false,
+    showtabs=false,
+    tabsize=2
 }
+\lstset{style=mystyle}
 
 %title
 \title{Práctica 1} 
@@ -81,7 +83,7 @@ Para ello los clientes tendrán una interfaz de comandos con la que podrán acce
   \item \textbf{PUBLISH}: Este mandato permitirá al usuario publicar un archivo para que sea visible al resto de clientes. Para ello proporcionará un \textit{path} absoluto del fichero
   \item \textbf{DELETE}: Este mandato permitirá al usuario borrar un archivo publicado anteriormente
   \item \textbf{LIST\_USERS}: Este mandato permitirá al usuario conocer cuales son los usuarios que están conectados
-  \item \textbf{LIST\_CONTETN}: Este mandato permitirá al usuario conocer los archivos publicados por el usuario proporcionado
+  \item \textbf{LIST\_CONTENT}: Este mandato permitirá al usuario conocer los archivos publicados por el usuario proporcionado
   \item \textbf{GET\_FILE}: Este mandato permitirá al usuario obtener un archivo publicado por otro usuario
 \end{itemize}
 
@@ -93,36 +95,61 @@ El servidor implementa los servicios necesarios para la coordinación de cliente
 
 \subsubsection{Implementación en el servidor}
 \label{subsec:implementacion_servidor}
-nuestra estructura vector que dobla de capacidad cuando se llena \-\> válido por su caracter de prototipo. 
+Se ha implementado una estructura de datos para representar la lista de usuarios registrados en el sistema. Para cada usuario se almacena su nombre, los archivos que tiene publicados, su ip, su puerto y si está o no conectado. La estructura empleada es la siguiente: 
 
+\begin{lstlisting}[language=C]
+#define CHARSIZE 512
 
-Se ha implementado una estructura de datos que consta de una lista de usuarios, donde cada usuario contiene información sobre este; tales como el nombre, los archivos publicados, si está conectado o no, y el ip y puerto.
-Dado que pueden haber un número indefinido de usuarios registrados se ha optado por utilizar un \textit{vector}, que si se llena doblará su tamaño.
-Para acceder a esta lista de usuarios se han implementado las siguientes interfaces:
+typedef struct {
+    char name[CHARSIZE];
+    char description[CHARSIZE];
+
+} file;
+
+typedef struct {
+    char name[CHARSIZE];
+    file* contents;
+    int contentsLen;
+    int contentsMaxLen;
+    int conected;
+    int port;
+    char ip[32];
+
+} user;
+
+\end{lstlisting}
+
+Dado que pueden haber un número indefinido de usuarios registrados, y que cada usuario puede tener publicados un número cualquiera de ficheros, se ha optado porque la estructura doble su tamaño cada vez que sea necesario relocalizar la memoria.
+
+Para el manejo de la estructura se ha implementado la siguiente interfaz de funciones: 
+
 \begin{itemize}
-  \item \texttt{createUserList()}: Esta interfaz crea una lista de usuarios vacía
-  \item \texttt{searchUser()}: Esta interfaz busca un usuario en la lista
-  \item \texttt{addUser()}: Esta interfaz añade un nuevo usuario en el caso de que no exista ya
-  \item \texttt{removeUser()}: Esta interfaz borra al usuario si existe en la lista
-  \item \texttt{addContent()}: Esta interfaz añade nuevo contenido a un usuario existente
-  \item \texttt{removeContent()}: Esta interfaz borra contenido a un usuario existente
-  \item \texttt{destroyList()}: Esta interfaz borra la lista de usuarios por completo  
+  \item \texttt{createUserList()}: Esta función crea una lista de usuarios vacía.
+  \item \texttt{searchUser()}: Esta función busca un usuario en la lista.
+  \item \texttt{addUser()}: Esta función añade un nuevo usuario en el caso de que no exista ya.
+  \item \texttt{removeUser()}: Esta función borra al usuario si existe en la lista.
+  \item \texttt{addContent()}: Esta función añade nuevo contenido a un usuario existente.
+  \item \texttt{removeContent()}: Esta función borra contenido a un usuario existente.
+  \item \texttt{destroyList()}: Esta función borra la lista de usuarios por completo.
 \end{itemize}
 
 \subsubsection{Concurrencia del Servidor}
 \label{subsec::concurrencia_servidor}
-Describir como aseguramos la concurrencia de clientes del lado del servidor => acceso a la estructura. 
+El servidor atiende clientes de manera concurrente. Para esto hemos optado por una aproximación de hilos bajo demanda. Es decir, cada vez que el servidor recibe una petición creará y lanzará un hilo \textit{detached} para el tratamiento de la misma. Con esto, son necesarios dos requisitos: detener al hilo principal para que no reciba una nueva petición hasta que el hilo haya copiado la anterior y asegurar el acceso exclusivo a la estructura definida en el apartado anterior. 
+
+Para lo primero, al igual que en la práctica dos, hacemos uso de un mutex y una condición que bloqueal al hilo principal hasta que el hilo haya copiado el descriptor, ip y puerto del cliente conectado. 
+
+Para asegurar el acceso exclusivo a la estructura de datos y, así, evitar condiciones de carrera, hacemos uso de un segundo mutex que protege cualqueir sección de código que acceda a la lista de usuarios. 
 
 \subsection{Comunicación}
 \label{subsec:comunicacion}
-La comunicación entre los distintos clientes y el servidor ocurre de manera independiente a las distintas máquinas que se conectan a nuestro servicio a través de sockets.
-Para conseguir esto es necesario que los mensajes que se envían por los sockets no sean \textit{multi-byte}, por lo que hemos optado por envíar y recibir tiras de caracteres.
+La comunicación entre los distintos clientes y el servidor ocurre de manera independiente a las distintas máquinas que se conectan a nuestro servicio a través de sockets. Para conseguir esto hemos codificado todas las comunicaciones en cadeanas de caracterres, a excepción del valor de retorno de las operaciones. Además, para evitar problemas ocasionados por el ordenamiento de bytes enviamos un único carácter a la vez. 
 
 La comunicación será una comunicación por petición, por lo que se abrirá la conexión con el servidor para realizar la petición correspondiente y, si todo ha funcionado correctamente, se cerrará la conexión.
 
 \subsubsection{Funciones auxiliares para la comunicación}
 \label{subsec:funciones}
-Para facilitar la implementación de la comunicación mediante Sockets se han implementado una serie de funciones auxiliares recogidas en el fichero \textit{src/servidor/common.c}. Estas implementan acciones repetidas en el lado servidor, así como gestión de errores y envío y recepción de mensajes adaptados a las necesidades del sistema. 
+Para facilitar la implementación de la comunicación mediante \textit{sockets} se han implementado una serie de funciones auxiliares recogidas en el fichero \textit{src/servidor/common.c}. Estas implementan acciones repetidas en el lado servidor, así como gestión de errores y envío y recepción de mensajes adaptados a las necesidades del sistema. 
 
 \begin{itemize}
     \item \texttt{serverSocket()}: crea y devuelve un \textit{socket} para el servidor en un número de puerto dado. Además, se ejecuta la llamada \texttt{listen()} para permitir al servidor aceptar conexiones más adelante. 
@@ -130,8 +157,8 @@ Para facilitar la implementación de la comunicación mediante Sockets se han im
     \item \texttt{clientSocket()}: crea y devuelve un socket para un cliente en el sistema. Además, este \textit{socket} estará conectado al servidor. 
     \item \texttt{sendMessage()}: envía un mensaje contenido en un \textit{buffer} a través de un \textit{socket}. 
     \item \texttt{recvMessage()}: recibe un mensaje y lo almacena en n \textit{buffer} dado. 
-    \item \texttt{writeline()}: se apoya de la función \texttt{sendMessage()} para enviar un mensaje hasta el final. 
-    \item \texttt{readLine()}: se apoya de \texttt{recvMessage()} para recibir un menesaje hasta el final de la cadena de texto. 
+    \item \texttt{writeline()}: se apoya de la función \texttt{sendMessage()} para enviar un mensaje hasta el final de cadena.
+    \item \texttt{readLine()}: se apoya de \texttt{recvMessage()} para recibir un menesaje hasta el final de la cadena de texto.
 \end{itemize}
 
 \section{Servicio web}
@@ -145,46 +172,37 @@ Describir aquí como hemos integrado el servidor y las modificaciones necesarias
 
 \section{Compilación}
 \label{sec:compilacion}
-En esta sección nos centraremos en la forma de compilar los servidores, ya que son la única parte del código escrita en un lenguaje compilado. 
+En esta sección nos centraremos en la forma de compilar los servidores, ya que son la única parte del código escrita en un lenguaje compilado. La compilación del proyecto está contenida en un fichero \textit{Makefile} situado en la raiz del proyecto.  
 
-\subsection{Servidor}
-\label{subsec:servidor_comp}
+El código necesario para el servidor está distrbuído en varios ficheros. Primero, el código encargado de la gestión de la comunicación con los clientes python y la ejecución de los servicios se encuentra contenido en el fichero \textit{src/servidor/servidor.c}; segundo, el código que encapsula la funcionalidad de la estructura de datos se encuentra en el fichero \textit{src/servidor/server\_storage.c}; y, por último, el código para la invocación de los procesos remotos se encuentra en el fichero \textit{print\_clnt.c} generado a través del comando \texttt{rpcgen}.Para generar el ejecutable correcatmente hemos compilado cada uno de estos ficheros por separado con las opciones de compilación adecuadas para crear varios ficheros objeto; después hemos enlazado estos ficheros en la generación del ejecutable \textit{servidor}.
+
+El código del servidor RPC está contenido exclusivamente en los ficheros \textit{print\_svc.c} y \textit{print\_server.c}. De nuevo, compilaremos estos dos ficheros de manera separada para luego enlazarlos.
+
+A continuación se muestran los comandos necesarios para generar los ficheros objeto:
 
 \begin{center}
-  \begin{lstlisting}[caption=Compiación del servidor]
+  \begin{lstlisting}[caption=Compilación de ficheros en ficheros objetos, language=bash]
     # generacion de objeto de la implementacion
     gcc -c src/servidor/server_storage.c
     
     # generacion de objeto de funciones auxiliares
     gcc -c src/servidor/common.c
 
-    # generacion de objeto del servidor
-    gcc -c servidor.c
-
-    \end{lstlisting}
-\end{center}
-
-\subsection{RPC}
-\label{subsec:rpc_comp}
-
-\begin{center}
-  \begin{lstlisting}[caption=Compiación del servidor]
     # generacion de objetos de archivos rpc
     gcc -g -I/usr/include/tirpc -D_REENTRANT -o print_clnt.o -c src/rpc/print_clnt.c
     gcc -g -I/usr/include/tirpc -D_REENTRANT -o print_svc.o -c src/rpc/print_svc.c
 
-    # generacion de objeto servidor
+    # generacion de objeto de servidores
+    gcc -c servidor.c
     gcc -g -I/usr/include/tirpc -c src/rpc/print_server.c
-
+    
     \end{lstlisting}
 \end{center}
 
-
-\subsection{Compilación del ejecutable servidor y el servidor rpc}
-\label{subsec:serv_exe_comp}
+Y con el siguiente fragmento del fichero \textit{Makefile} se enlazan los ficheros y se generan ambos ejecutables con los nombres \textit{servidor} y \textit{servidor\_rpc}:
 
 \begin{center}
-  \begin{lstlisting}[caption=Compiación del servidor]
+  \begin{lstlisting}[caption=Generación de ejecutables, language=bash]
     # generacion de ejecutable del servidor
     gcc -g -Wall -lrt -o servidor servidor.o server_storage.o common.o print_clnt.o -lnsl -lpthread -ldl -ltirpc
     
