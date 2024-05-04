@@ -1,0 +1,114 @@
+\documentclass[]{article}
+\usepackage{graphicx}
+\usepackage[spanish]{babel}
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=3cm, right=3cm]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+
+\lstset{
+  language=C,
+  basicstyle=\ttfamily\small,
+  commentstyle=\color{gray},
+  keywordstyle=\color{blue},
+  stringstyle=\color{green},
+  numberstyle=\tiny\color{gray},
+  stepnumber=1,
+  showspaces=false,
+  showstringspaces=false,
+  tabsize=2,
+  breaklines=true, captionpos=false,
+}
+
+%title
+\title{Práctica 1} 
+
+\author{Adrián Ferández Galán y César López Mantecón}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+   \includegraphics[width=0.9\textwidth]{uc3m.jpg} 
+    {\Huge Universidad Carlos III\\
+    
+     \Large Sistemas Distribuidos\\
+     \vspace{0.5cm}
+     Curso 2023-24}
+    \vspace{2cm}
+
+    {\Huge \textbf{Práctica Final} \par}
+    \vspace{0.5cm}
+    {\Large Diseño e implementación de un sistema peer-to-peer \par}
+    \vspace{8cm}
+
+   \textbf{Ingeniería Informática, Tercer curso}\\
+    \vspace{0.2cm} 
+    Adrián Fernández Galán (NIA: 100472182, e-mail: 100472182@alumnos.uc3m.es) \\
+    César López Mantecón   (NIA: 100472092, e-mail: 100472092@alumnos.uc3m.es)
+    \vspace{0.5cm}
+
+   
+    \textbf{Prof .} Félix García Caballeira y Alejandro Calderón Mateos\\
+    
+    \textbf{Grupo: } 81   
+    
+\end{titlepage}
+\newpage
+
+\renewcommand{\contentsname}{\centering Índice}
+\tableofcontents
+
+\newpage
+
+\section{Introducción}
+\label{sec:introduccion}
+En este documento se recoge el desarrollo de la práctica final de Sistemas Distribuidos. Para esta práctica hemos desarrollado una aplicación distribuida que cuenta con 2 servidores desarrollados en lenguaje C, un código clinete desarrollado en python y un servicio web desarrollado igualmente en Python. A continuación describiremos el diseño e implementación de cada una de las partes del sistema. 
+\section{Diseño original}
+\label{sec:disenno}
+La aplicación constará de dos partes diferenciadas: los clientes y el servidor.
+
+\subsection{Cliente}
+\label{subsec:cliente}
+Aquí se habla del cliente 
+
+
+\subsection{Servidor}
+\label{subsec:servidor}
+El servidor implementa los servicios necesarios para la coordinación de clientes. Para esto se apoya en una estructura de implementación propia especialmente diseñada para las particularidades de la práctica. 
+
+\subsubsection{Implementación en el servidor}
+\label{subsec:implementacion_servidor}
+nuestra estructura vector que dobla de capacidad cuando se llena -> válido por su caracter de prototipo. 
+
+\subsubsection{Concurrencia del Servidor}
+\label{subsec::concurrencia_servidor}
+Describir como aseguramos la concurrencia de clientes del lado del servidor => acceso a la estructura. 
+
+\subsection{Comunicación}
+\label{subsec:comunicacion}
+Describir cómo hacemos la comunicación para que sea independiente del lenguaje 
+
+\section{Servicio web}
+\label{sec:web_service}
+Describir aquí la implementación del servicio web y su integración.  
+
+\section{Integración del servidor RPC}
+\label{sec:rpc}
+Describir aquí como hemos integrado el servidor y las modificaciones necesarias en el código 
+
+\section{Compilación}
+\label{sec:compilacion}
+En esta sección nos centraremos en la forma de compilar los servidores, ya que son la única parte del código escrita en un lenguaje compilado. 
+
+\section{Descripción de pruebas}
+\label{sec:descripcion_de_pruebas}
+Descripción de pruebas 
+
+\section{Conclusiones}
+\label{sec:conclusiones}
+Este ejercicio combina casi todas las tecnologías que se nos han presentado durante el curso en un sistema completo que pretende aproximarse a una aplicación distribuída. Esto nos ha permitido afianzar los conocimientos adquiridos en la asignatura y desarrollar nuestras competencias para la programación de servicios distribuidos. 
+
+Además, esta práctica nos presenta por primera vez la necesidad de integrar nuevos servicios basados en otra tecnología sobre un sistema ya funcional. Esta es una aptitud verdaderamente interesante y valiosa de cara a nuestro desarrollo como informáticos.
+\end{document}
