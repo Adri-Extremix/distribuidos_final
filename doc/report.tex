@@ -122,7 +122,7 @@ La comunicación será una comunicación por petición, por lo que se abrirá la
 
 \subsubsection{Funciones auxiliares para la comunicación}
 \label{subsec:funciones}
-Para facilitar la implementación de la comunicación mediante Sockets se han implementado una serie de funciones auxiliares recogidas en el fichero \textit{src/common.c}. Estas implementan acciones repetidas tanto en el lado cliente y servidor, así como gestión de errores y envío y recepción de mensajes adaptados a las necesidades del sistema. 
+Para facilitar la implementación de la comunicación mediante Sockets se han implementado una serie de funciones auxiliares recogidas en el fichero \textit{src/servidor/common.c}. Estas implementan acciones repetidas en el lado servidor, así como gestión de errores y envío y recepción de mensajes adaptados a las necesidades del sistema. 
 
 \begin{itemize}
     \item \texttt{serverSocket()}: crea y devuelve un \textit{socket} para el servidor en un número de puerto dado. Además, se ejecuta la llamada \texttt{listen()} para permitir al servidor aceptar conexiones más adelante. 
