@@ -17,14 +17,7 @@ user_list usuarios;
 
 /**
  *
- *  "REGISTER" username -> int
- *  "UNREGISTER" username -> int
- *  "CONNECT" username -> int
- *  "DISCONNECT" username -> int
- *  "PUBLISH" fileName, description, username -> int
- *  "DELETE" username, fileName -> int
- *  "LIST_USERS" -> int (result), int (num_users), (username, ip, port)*num_users
- *  "LIST_CONTENT", username -> int, int (num_elem), (filename, file_description) * num_elem
+ *  
 */
 
 pthread_mutex_t mutex;
@@ -56,6 +49,10 @@ int send_rpc(char *username, char *operacion) {
     sprintf(tmp, "%s\t%s\t%s", username, operacion, timestamp);
 
     char *rpc_ip = get_ip();
+    if (NULL == rpc_ip) {
+        perror("not setted ip, unable to connect to servidor_rpc (please, make sure the enviroment variable, RPC_IP, is setted up)");
+        return -1;
+    }
 
     CLIENT *clnt = clnt_create (rpc_ip, PRINT, PRINTVER, "udp");
 	if (clnt == NULL) {
@@ -94,11 +91,15 @@ int tratar_peticion(void* pet) {
     //readLine(local_sc, temp, ARR_SIZE); // read username 
     printf("s> OPERATION FROM %s...\n", ip);
     // leer operacion 
-    readLine(local_sc, temp, ARR_SIZE);
+    if (readLine(local_sc, temp, ARR_SIZE) < 0) {
+        perror("error: readline (coop)");
+    }
 
     if (strcmp(temp, "REGISTER") == 0) {
         // leer nombre de usuario
-        readLine(local_sc, temp, ARR_SIZE);
+        if (readLine(local_sc, temp, ARR_SIZE) < 0) {
+            perror("error: readline register (username)");
+        }
         //printf("register %s %s %i\n", temp, ip, port); 
 
         pthread_mutex_lock(&mutex_hilos); // acceso a la estructura
@@ -106,14 +107,16 @@ int tratar_peticion(void* pet) {
         pthread_mutex_unlock(&mutex_hilos);
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
-        sendMessage(local_sc, &to_send_result, 1);
+        if (sendMessage(local_sc, &to_send_result, 1) < 0) perror("error sending ret_val");
 
         send_rpc(temp, "REGISTER");
 
     }
     else if (strcmp(temp, "UNREGISTER") == 0) {
         // leer nombre de usuario
-        readLine(local_sc, temp, ARR_SIZE);
+        if (readLine(local_sc, temp, ARR_SIZE) < 0 ) {
+            perror("error: readline unregister (username)");
+        }
         //printf("unregister %s\n", temp);
 
         pthread_mutex_lock(&mutex_hilos);
@@ -123,17 +126,23 @@ int tratar_peticion(void* pet) {
 
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
-        sendMessage(local_sc, &to_send_result, 1);
+        if (sendMessage(local_sc, &to_send_result, 1) < 0) perror("error sending ret_val");
         send_rpc(temp, "UNREGISTER");
 
     } else if (strcmp(temp, "CONNECT") == 0) {
         char username[ARR_SIZE];
         char port[ARR_SIZE];
         char sc_ip[ARR_SIZE];
-        readLine(local_sc, username, ARR_SIZE); // username
-        readLine(local_sc, sc_ip, ARR_SIZE); // ip
-        readLine(local_sc, port, ARR_SIZE); // port
-        printf("connect %s %s %s\n", username, sc_ip, port); 
+        if (readLine(local_sc, username, ARR_SIZE) < 0) {
+            perror("error:readline");
+        } // username
+        if (readLine(local_sc, sc_ip, ARR_SIZE) < 0) {
+            perror("error:readline");
+        } // ip
+        if (readLine(local_sc, port, ARR_SIZE) < 0) {
+            perror("error:readline");
+        } // port
+        //printf("connect %s %s %s\n", username, sc_ip, port); 
         int result = 0;
 
         pthread_mutex_lock(&mutex_hilos);
@@ -160,13 +169,15 @@ int tratar_peticion(void* pet) {
 
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
-        sendMessage(local_sc, &to_send_result, 1);
+        if (sendMessage(local_sc, &to_send_result, 1) < 0) perror("error sending ret_val");
         send_rpc(username, "CONNECT");
 
 
     }
     else if (strcmp(temp, "DISCONNECT") == 0) {
-        readLine(local_sc, temp, ARR_SIZE); // username
+        if (readLine(local_sc, temp, ARR_SIZE) < 0) {
+            perror("error: read line");
+        } // username
         //printf("disconnect %s\n", temp); 
         int result = 0;
 
@@ -188,7 +199,7 @@ int tratar_peticion(void* pet) {
 
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
-        sendMessage(local_sc, &to_send_result, 1);
+        if (sendMessage(local_sc, &to_send_result, 1) < 0) perror("error sending ret_val");
         send_rpc(temp, "DISCONNECT");
 
     }
@@ -197,10 +208,16 @@ int tratar_peticion(void* pet) {
         char fileName[ARR_SIZE];
         char description[ARR_SIZE];
         char username[ARR_SIZE];
-        readLine(local_sc, username, ARR_SIZE); // read username
+        if (readLine(local_sc, username, ARR_SIZE) < 0){
+            perror("readLine: error");
+        } // read username
         printf("Este es el nombre del usuario %s\n", username);
-        readLine(local_sc, fileName, ARR_SIZE); // read fileName
-        readLine(local_sc, description, ARR_SIZE); // read description
+        if (readLine(local_sc, fileName, ARR_SIZE) < 0) {
+            perror("readline: error");
+        }; // read fileName
+        if (readLine(local_sc, description, ARR_SIZE) < 0 ) {
+            perror("readline: error");
+        } // read description
 
         pthread_mutex_lock(&mutex_hilos);
         int result = addContent(usuarios, username, fileName, description);
@@ -208,7 +225,7 @@ int tratar_peticion(void* pet) {
 
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
-        sendMessage(local_sc, &to_send_result, 1);
+        if (sendMessage(local_sc, &to_send_result, 1) < 0) perror("error sending ret_val");
         
         char cadena[ARR_SIZE];
         sprintf(cadena, "%s %s", "PUBLISH", fileName);
@@ -218,8 +235,12 @@ int tratar_peticion(void* pet) {
     else if (strcmp(temp, "DELETE") == 0) {
         char fileName[ARR_SIZE];
         char username[ARR_SIZE];
-        readLine(local_sc, username, ARR_SIZE); // read username
-        readLine(local_sc, fileName, ARR_SIZE); // read fileName
+        if (readLine(local_sc, username, ARR_SIZE) < 0) {
+            perror("error: readline delete (username)");
+        } // read username
+        if (readLine(local_sc, fileName, ARR_SIZE) < 0) {
+            perror("error: readline delete (filename)");
+        } // read fileName
         //printf("delete ( %s, %s )\n", username, fileName);
 
         pthread_mutex_lock(&mutex_hilos);
@@ -241,7 +262,7 @@ int tratar_peticion(void* pet) {
 
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
-        sendMessage(local_sc, &to_send_result, 1);
+        if (sendMessage(local_sc, &to_send_result, 1) < 0) perror ("error sending ret_val");
         char cadena[ARR_SIZE];
         sprintf(cadena, "%s %a", "PUBLISH", fileName);
         send_rpc(username, cadena);
@@ -252,7 +273,7 @@ int tratar_peticion(void* pet) {
 
         int8_t to_send_result = (int8_t)0;
         // envio de resultado => 1 byte
-        sendMessage(local_sc, &to_send_result, 1);
+        if (sendMessage(local_sc, &to_send_result, 1) < 0) perror("error sending ret_val");
 
         pthread_mutex_lock(&mutex_hilos);
         
@@ -292,7 +313,9 @@ int tratar_peticion(void* pet) {
 
     }
     else if (strcmp(temp, "LIST_CONTENT") == 0) {
-        readLine(local_sc, temp, ARR_SIZE); // username
+        if (readLine(local_sc, temp, ARR_SIZE) < 0) {
+            perror("error: readline of list_content (username)");
+        }; // username
         //printf("list_content %s\n", temp);
         pthread_mutex_lock(&mutex_hilos);
         int index = searchUser(usuarios, temp);
@@ -300,7 +323,7 @@ int tratar_peticion(void* pet) {
             // user does not exists 
             int8_t to_send_result = (int8_t)1;
             // envio de resultado => 1 byte
-            sendMessage(local_sc, &to_send_result, 1);
+            if (sendMessage(local_sc, &to_send_result, 1) < 0) perror("error sending ret_val");
             //printf("User does not exists\n");
 
         }
@@ -309,7 +332,7 @@ int tratar_peticion(void* pet) {
 
             int8_t to_send_result = (int8_t)0;
             // envio de resultado => 1 byte
-            sendMessage(local_sc, &to_send_result, 1);
+            if (sendMessage(local_sc, &to_send_result, 1) < 0) perror("error sending ret_val");
 
             sprintf(temp, "%i", usuarios->users[index].contentsLen); // tamaño de la lista
             if (writeLine(local_sc, temp) < 0) {
@@ -319,8 +342,8 @@ int tratar_peticion(void* pet) {
             for (int i = 0; i < usuarios->users[index].contentsLen; ++i) {
                 //printf("--%s %s\n", usuarios->users[index].contents[i].name, usuarios->users[index].contents[i].description);
 
-                writeLine(local_sc, usuarios->users[index].contents[i].name);
-                writeLine(local_sc, usuarios->users[index].contents[i].description);
+                if (writeLine(local_sc, usuarios->users[index].contents[i].name) < 0) perror("error write line");
+                if (writeLine(local_sc, usuarios->users[index].contents[i].description) < 0) perror ("error write line");
             }
         }
         pthread_mutex_unlock(&mutex_hilos);
