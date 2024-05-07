@@ -85,6 +85,9 @@ class client :
             message = f"{reg_unreg}\0".encode()
             serv_sock.sendall(message)
 
+            message = (time + '\0').encode()
+            serv_sock.sendall(message)
+
             message = f"{user}\0".encode()
             serv_sock.sendall(message)
 
@@ -193,6 +196,9 @@ class client :
             message = b'CONNECT\0'
             serv_sock.sendall(message)
 
+            message = (time + '\0').encode()
+            serv_sock.sendall(message)
+
             message = f"{user}\0".encode()
             serv_sock.sendall(message)
 
@@ -209,8 +215,8 @@ class client :
             print(f"IP del socket: {address}")
             print(f"Puerto del socket: {port}")
 
-            message = f"{address}\0".encode()
-            serv_sock.sendall(message)
+            #message = f"{address}\0".encode()
+            #serv_sock.sendall(message)
 
             message = f"{port}\0".encode()
             serv_sock.sendall(message)
@@ -257,6 +263,9 @@ class client :
             message = b'DISCONNECT\0'
             serv_sock.sendall(message)
 
+            message = (time + '\0').encode()
+            serv_sock.sendall(message)
+
             message = f"{user}\0".encode()
             serv_sock.sendall(message)
 
@@ -297,6 +306,9 @@ class client :
 
         try:
             message = b'PUBLISH\0'
+            serv_sock.sendall(message)
+
+            message = (time + '\0').encode()
             serv_sock.sendall(message)
 
             message = f"{client._username}\0".encode()
@@ -343,6 +355,9 @@ class client :
             message = b'DELETE\0'
             serv_sock.sendall(message)
 
+            message = (time + '\0').encode()
+            serv_sock.sendall(message)
+
             message = f"{client._username}\0".encode()
             serv_sock.sendall(message)
 
@@ -380,9 +395,13 @@ class client :
          @return Devuelve un tupla, tupla[0] es el código de error y tupla[1] es una lista de diccionarios 
         """
         serv_sock = client._get_socket(client._server,client._port)
+        time = client._read_time()
 
         try:
             message = b'LIST_USERS\0'
+            serv_sock.sendall(message)
+
+            message = (time + '\0').encode()
             serv_sock.sendall(message)
 
             message = f"{client._username}\0".encode()
@@ -426,7 +445,6 @@ class client :
     def  listusers():
 
         answer, list_users = client.get_list_users()
-        time = client._read_time()
 
         match answer:
             case 0:
@@ -454,7 +472,10 @@ class client :
             message = b'LIST_CONTENT\0'
             serv_sock.sendall(message)
 
-            message = f"{user}\0".encode()
+            message = (time + '\0').encode()
+            serv_sock.sendall(message)
+
+            message = f"{client._username}\0".encode()
             serv_sock.sendall(message)
 
             message = f"{user}\0".encode()
