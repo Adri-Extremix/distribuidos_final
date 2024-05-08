@@ -116,6 +116,7 @@ int tratar_peticion(void* pet) {
         return -1;
     }
     
+    printf("s> Operacion aceptada de %s\n", username);
     
 
     if (strcmp(temp, "REGISTER") == 0) {
@@ -213,7 +214,7 @@ int tratar_peticion(void* pet) {
 
         // acceso a la estructura
         pthread_mutex_lock(&mutex_hilos);
-        int index = searchUser(usuarios, temp);
+        int index = searchUser(usuarios, username);
         if (index != -1) {
             if (usuarios->users[index].conected) {
                 usuarios->users[index].conected = 0;
@@ -235,7 +236,7 @@ int tratar_peticion(void* pet) {
             close(local_sc);
             pthread_exit(NULL);
         }
-        send_rpc(temp, "DISCONNECT", timestamp);
+        send_rpc(username, "DISCONNECT", timestamp);
 
     }
     else if (strcmp(temp, "PUBLISH") == 0) {
@@ -468,7 +469,6 @@ int tratar_peticion(void* pet) {
 
     close(local_sc);
     //printf("finish: %i\n", local_sc);
-    printf("Operacion aceptada de %s\n", username);
     pthread_exit(NULL);
 }
 
