@@ -130,7 +130,7 @@ Para el manejo de la estructura se ha implementado la siguiente interfaz de func
   \item \texttt{removeUser()}: Esta función borra al usuario si existe en la lista.
   \item \texttt{addContent()}: Esta función añade nuevo contenido a un usuario existente.
   \item \texttt{removeContent()}: Esta función borra contenido a un usuario existente.
-  \item \texttt{destroyList()}: Esta función borra la lista de usuarios por completo.
+  \item \texttt{destroyList()}: Esta función borra la lista de usuarios por completo, liberando la memoria empleada para almacenar la misma.
 \end{itemize}
 
 \subsubsection{Concurrencia del Servidor}
@@ -168,7 +168,21 @@ Este servicio web se llamará desde el lado del cliente cada vez que se quiera r
 
 \section{Integración del servidor RPC}
 \label{sec:rpc}
-Describir aquí como hemos integrado el servidor y las modificaciones necesarias en el código 
+En esta sección describimos cómo hemos abordado la implementación de un servidor (desde este momento referido como \textit{servidor rpc}) que recibe una cadena de carácteres y la imprime por pantalla. El proceso que actuará de cliente en esta comunicación es el servidor desarrollado para la aplicación distribuída de compartición de ficheros. 
+
+Lo primero, hemos descrito la interfaz necesaria utilizando el lenguaje XDR. En este caso necesitaremos una única función que reciba una cadena de texto. 
+
+\begin{lstlisting}[language=C, caption=Interfaz XDR]
+program PRINT {
+    version PRINTVER {
+        int rpc_print(string impresion) = 0;
+    } = 1;
+} = 99;
+\end{lstlisting}
+
+Esta interfaz nos permite generar 4 ficheros de código que implementan la funcionalidad deseada en una función \texttt{rpc\_print\_1}. Esto lo hacemos a través del comando \texttt{rpcgen}.
+
+Para que el proceso cliente conozca la dirección IP del servidor rpc hemos decidido utilizar una variable de entorno \textit{RPC\_IP}. Para su consulta hemos desarrollado una función \texttt{get\_ip}, implementada en el fichero \textit{servidor.c}. Por último, hemos implementado una función que encapsula la construcción y envío de la cadena de texto exigida por el enunciado al servidor rpc. 
 
 \section{Compilación}
 \label{sec:compilacion}
