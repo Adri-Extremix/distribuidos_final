@@ -321,7 +321,7 @@ int tratar_peticion(void* pet) {
 
     }
     else if (strcmp(temp, "LIST_USERS") == 0) {
-        printf("list_users\n"); 
+        //printf("list_users\n"); 
         
         int8_t to_send_result = (int8_t)0;
         // envio de resultado => 1 byte
@@ -374,7 +374,7 @@ int tratar_peticion(void* pet) {
             
         }
         pthread_mutex_unlock(&mutex_hilos);
-        printf("complete list_users\n"); 
+        //printf("complete list_users\n"); 
         
         send_rpc(username, "LIST_USERS", timestamp); 
 
