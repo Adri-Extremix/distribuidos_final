@@ -25,9 +25,9 @@ class client :
     _p2p_thread = None
     _stop_event = threading.Event()
     # ******************** METHODS *******************
-
     @staticmethod
     def _read_string(sock):
+        """ Lee de un socket dado hasta un final de cadena """
         message = ""
         while True:
             msg = sock.recv(1)
@@ -39,6 +39,7 @@ class client :
         return message
     @staticmethod
     def write_file_to_socket(sock, file_path):
+        """ Escribe un fichero entero en un socket dado """
         with open(file_path, 'rb') as file:
             while True:
                 data = file.read(1024)
@@ -49,6 +50,7 @@ class client :
 
     @staticmethod
     def _read_until_eof(sock):
+        """Lee hasta el final de archivo de un socket dado de un fichero dado"""
         data = ""
         while True:
             chunk = sock.recv(1024)
@@ -59,7 +61,7 @@ class client :
 
     @staticmethod
     def _get_socket(ip,port):
-        # Función que abre el socket del servidor
+        """ Obtiene un socket dado una ip y un puerto """
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_address = (ip,port)
         sock.connect(server_address)
@@ -67,18 +69,18 @@ class client :
     
     @staticmethod
     def _read_time():
+        """ Llama al servicio web y obtiene la fecha"""
         wsdl = 'http://localhost:8000/?wsdl'
         try:
             client = zeep.Client(wsdl=wsdl)
             fecha = client.service.get_time() 
-            print(fecha)
             return fecha
         except Exception as e:
             print(f"Error al conectar con el servidor web: {e}")
 
     @staticmethod
     def _reg_unreg(user:str, reg_unreg:str):
-        # Función que se encarga de la funcionalidad de registro y darse de baja
+        """ Encapsulación de los servicios register y unregister """
         serv_sock = client._get_socket(client._server,client._port)
         time = client._read_time()
         try:
@@ -117,21 +119,21 @@ class client :
     
     @staticmethod
     def  register(user) :
+        """ Función que se encarga de registrar un usuario """
 
         return client._reg_unreg(user,"REGISTER")
    
     @staticmethod
     def  unregister(user) :
+        """Función que se encarga de dar de baja a un usuario"""
         
         return client._reg_unreg(user,"UNREGISTER")
 
     @staticmethod
     def _client_listen(sock):
-        # Función que realiza el hilo secundario del cliente
-        # para atender a otros clientes
+        """ Función que realiza el hilo secundario del cliente para atender a otros clientes"""
+
         sock.listen(5)
-        #sock.settimeout(2.0) # Timeout para que no se quede bloqueado en el accept
-        print("Escucho peticiones")
         while not client._stop_event.is_set():
 
             try:
@@ -144,33 +146,27 @@ class client :
                         message = client._read_string(connection)
 
                         namefile = message
-                        print("--", message)
 
                         if namefile not in client._published:
-                            print("Archivo no publicado")
                             answer = 2
                             connection.sendall(answer.to_bytes(1,'big'))
                         else:
                             try:
-                                print("enviando")
                                 answer = 0
                                 connection.sendall(answer.to_bytes(1,'big'))
+                                # Leo el fichero que me han pedido y lo envío
                                 with open(namefile, mode="rb") as file:
                                     while True:
                                         chunk = file.read(1024)
                                         if not chunk:
                                             break
                                         connection.sendall(chunk)
-                                
-                                print("enviado")
                             except FileNotFoundError:
                                 answer = 1
                                 connection.sendall(answer.to_bytes(1,'big'))
                             except Exception as e:
                                 print(e)
-                                print("exception")
-                    else:
-                        print("No he recibido GET_FILE")    
+                    else:  
                         answer = 2
                         connection.sendall(answer.to_bytes(1,'big'))
 
@@ -178,12 +174,12 @@ class client :
                     connection.close()
             except OSError as e:
                 if e.errno == 22:
-                    print("Fin del hilo")
                     return 
         
 
     @staticmethod
     def  connect(user) :
+        """Función que se encarga de conectar a los usuarios al servicio"""
 
         if (client._username):
             print("CONNECT FAIL")  # Si ya hay un cliente conectado
@@ -212,11 +208,6 @@ class client :
             sock.bind(server_address)
             address, port = sock.getsockname() # Obtengo el puerto asignado
 
-            print(f"IP del socket: {address}")
-            print(f"Puerto del socket: {port}")
-
-            #message = f"{address}\0".encode()
-            #serv_sock.sendall(message)
 
             message = f"{port}\0".encode()
             serv_sock.sendall(message)
@@ -226,7 +217,7 @@ class client :
             answer = int.from_bytes(serv_sock.recv(1), 'big')
 
         except Exception as e:
-            print("Ha dado una excepción")
+            print(e)
             answer = None
 
         finally:
@@ -255,6 +246,7 @@ class client :
     
     @staticmethod
     def  disconnect(user) :
+        """Función que se encarga de desconectar a los clientes del servicio"""
 
         serv_sock = client._get_socket(client._server,client._port)
         time = client._read_time()
@@ -282,9 +274,10 @@ class client :
         match answer:
                 case 0:
                     print("DISCONNECT OK")
+                    # Termino la ejecución del hilo que atiende peticiones
                     client._stop_event.set()
-                    print("Recojo el hilo")
                     client._sock.shutdown(socket.SHUT_RDWR)
+                    # Cierro el socket
                     client._sock.close()
                     client._p2p_thread.join()
 
@@ -300,6 +293,7 @@ class client :
 
     @staticmethod
     def  publish(fileName,  description) :
+        """Función que se encarga de publicar un archivo dado su nombre y su descripción"""
         
         serv_sock = client._get_socket(client._server,client._port)
         time = client._read_time()
@@ -347,6 +341,7 @@ class client :
 
     @staticmethod
     def  delete(fileName) :
+        """Función que se encarga de borrar un archivo indicado"""
 
         serv_sock = client._get_socket(client._server,client._port)
         time = client._read_time()
@@ -443,6 +438,7 @@ class client :
 
     @staticmethod
     def  listusers():
+        """Función que lista los usuarios actualmente conectados"""
 
         answer, list_users = client.get_list_users()
 
@@ -465,6 +461,7 @@ class client :
 
     @staticmethod
     def  listcontent(user) :
+        """Funcion que lista el contenido de un usuario dado"""
         serv_sock = client._get_socket(client._server,client._port)
         time = client._read_time()
 
@@ -516,7 +513,7 @@ class client :
 
     @staticmethod
     def  getfile(user,  remote_FileName,  local_FileName) :
-        
+        """Función que obtiene un archivo publicado por un usuario"""
         answer, list_users = client.get_list_users()
         time = client._read_time()
 
