@@ -97,7 +97,7 @@ El servidor implementa los servicios necesarios para la coordinación de cliente
 \label{subsec:implementacion_servidor}
 Se ha implementado una estructura de datos para representar la lista de usuarios registrados en el sistema. Para cada usuario se almacena su nombre, los archivos que tiene publicados, su ip, su puerto y si está o no conectado. La estructura empleada es la siguiente: 
 
-\begin{lstlisting}[language=C]
+\begin{lstlisting}[language=C, caption=Estructura de datos para el servidor]
 #define CHARSIZE 512
 
 typedef struct {
@@ -116,6 +116,14 @@ typedef struct {
     char ip[32];
 
 } user;
+
+typedef struct {
+    int size;
+    int max_size;
+    user* users;
+} __user_list;
+
+typedef __user_list* user_list;
 
 \end{lstlisting}
 
