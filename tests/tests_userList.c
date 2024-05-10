@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "server_storage.h"
+#include "../src/servidor/server_storage.h"
 
 int main() {
     printf("1\n"); 
@@ -37,10 +37,10 @@ int main() {
 
     removeUser(lista, "Pepe"); // error por no existencia
 
-    addContent(lista, "Otro", "pito", "pitopito"); // error no existe usuario
-    addContent(lista, "Cesar", "pito", "pitopito"); 
+    addContent(lista, "Otro", "silbato", "silbatosilbato"); // error no existe usuario
+    addContent(lista, "Cesar", "silbato", "silbatosilbato"); 
     addContent(lista, "Cesar", "holabuenas", "adios"); 
-    addContent(lista, "Cesar", "pito", "pitopito"); // error fichero que ya existe
+    addContent(lista, "Cesar", "silbato", "silbatosilbato"); // error fichero que ya existe
     printf("\ndespués de addContent\n[");
     for (int i = 0; i < lista->size; ++i) {
         printf("%s: ", lista->users[i].name);
@@ -52,9 +52,9 @@ int main() {
     }
     printf("]\n\n");
 
-    removeContent(lista, "Otro", "pito"); // fallo no existencia user
-    removeContent(lista, "Adrian", "pito"); // fallo no existencia archivo
-    removeContent(lista, "Cesar", "pito"); 
+    removeContent(lista, "Otro", "silbato"); // fallo no existencia user
+    removeContent(lista, "Adrian", "silbato"); // fallo no existencia archivo
+    removeContent(lista, "Cesar", "silbato"); 
 
     printf("\ndespués de removeContent\n[");
     for (int i = 0; i < lista->size; ++i) {

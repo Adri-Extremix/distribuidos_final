@@ -22,7 +22,6 @@ servidor.o: $(SRC)servidor.c common.o rpc
 rpc: 
 	@printf "compiling rpc_files"
 	gcc $(RPCFlAGS) -D_REENTRANT -o print_clnt.o -c src/rpc/print_clnt.c
-	#gcc $(RPCFlAGS) -D_REENTRANT -o print_xdr.o -c src/rpc/print_xdr.c
 	gcc $(RPCFlAGS) -D_REENTRANT -o print_svc.o -c src/rpc/print_svc.c
 	
 server_storage.o: $(SRC)server_storage.c 
@@ -33,14 +32,17 @@ common.o: $(SRC)common.c
 	@echo "compiling common..."
 	gcc -c -fPIC $<
 
-test: src/servidor/tests_userList.c src/servidor/server_storage.c
+testing: tests/tests_userList.c src/servidor/server_storage.c
 	gcc -g -Wall -c src/servidor/server_storage.c
-	gcc -g -Wall -c src/servidor/tests_userList.c
+	gcc -g -Wall -c tests/tests_userList.c
 	gcc -o test tests_userList.o server_storage.o
+	gcc -o test_concurrency tests/tests_concurrency.c
+	@./test
+	@bash tests/test_imp.sh
 
 clean:
 	rm *.o
 
 DonLimpio:
-	rm *.o servidor servidor_rpc
+	rm *.o servidor servidor_rpc test
 
