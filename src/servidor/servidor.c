@@ -10,24 +10,27 @@
 
 #define RPC_IP "RPC_IP"
 
+// constantes para el tamaño de arrays
 const int CHAR_SIZE = 256;
 const int ARR_SIZE = 1024;
 
-user_list usuarios;
+user_list usuarios; // lista de usuarios
 
-/**
- *
- *  
-*/
-
+// mutex concurrencia
 pthread_mutex_t mutex;
 pthread_mutex_t mutex_hilos;
 pthread_cond_t cond_hilos;
 pthread_cond_t cond;
 int copiado = 0;
+
+
 int sd = 70000;
 void stop_server() {
+    /*detiene el servidor*/
     pthread_mutex_destroy(&mutex);
+    pthread_mutex_destroy(&mutex_hilos);
+    pthread_cond_destroy(&cond_hilos);
+    pthread_cond_destroy(&cond);
     printf("Cerrando servidor...\n");
     if (sd != 70000)
         close(sd);
@@ -35,6 +38,7 @@ void stop_server() {
 }
 
 char* get_ip() {
+    /*optiene la ip de variable de entorno*/
     char* ip = getenv(RPC_IP);
     if (ip == NULL) {
         perror("NOT setted ip");
@@ -44,8 +48,8 @@ char* get_ip() {
 }
 
 int send_rpc(char *username, char *operacion, char* timestamp) {
+    /*envía una cadena de caracteres a servidor_rpc*/
     char tmp[ARR_SIZE*2]; 
-    /*char timestamp[] = "17/12/2014 13:20:35"; // sustituir por conseguir timestamp*/
     sprintf(tmp, "%s\t%s\t%s", username, operacion, timestamp);
 
     char *rpc_ip = get_ip();
@@ -73,6 +77,7 @@ typedef struct p {
 } peticion;
 
 int tratar_peticion(void* pet) {
+    // constantes necesarias
     int local_sc;
     char ip[32];
     int port = 0;
@@ -129,13 +134,12 @@ int tratar_peticion(void* pet) {
         
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
-        if (sendMessage(local_sc, &to_send_result, 1) < 0) {
+        if (sendMessage(local_sc, (char *)&to_send_result, 1) < 0) {
             perror("error sending ret_val");
             close(local_sc);
             pthread_exit(NULL);
             return -1;    
         }
-
 
         send_rpc(username, "REGISTER", timestamp);
 
@@ -150,7 +154,7 @@ int tratar_peticion(void* pet) {
         
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
-        if (sendMessage(local_sc, &to_send_result, 1) < 0) {
+        if (sendMessage(local_sc, (char *)&to_send_result, 1) < 0) {
             perror("error sending ret_val");
             close(local_sc);
             pthread_exit(NULL);
@@ -198,11 +202,12 @@ int tratar_peticion(void* pet) {
 
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
-        if (sendMessage(local_sc, &to_send_result, 1) < 0) {
+        if (sendMessage(local_sc, (char *)&to_send_result, 1) < 0) {
             perror("error sending ret_val");
             close(local_sc);
             pthread_exit(NULL);
         }
+
         send_rpc(username, "CONNECT", timestamp);
 
 
@@ -231,7 +236,7 @@ int tratar_peticion(void* pet) {
 
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
-        if (sendMessage(local_sc, &to_send_result, 1) < 0) {
+        if (sendMessage(local_sc, (char *)&to_send_result, 1) < 0) {
             perror("error sending ret_val");
             close(local_sc);
             pthread_exit(NULL);
@@ -260,18 +265,20 @@ int tratar_peticion(void* pet) {
             return -1;
         }
 
+        // acceso a la estructura
         pthread_mutex_lock(&mutex_hilos);
         int result = addContent(usuarios, username, fileName, description);
         pthread_mutex_unlock(&mutex_hilos);
 
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
-        if (sendMessage(local_sc, &to_send_result, 1) < 0) {
+        if (sendMessage(local_sc, (char *)&to_send_result, 1) < 0) {
             perror("error sending ret_val");
             close(local_sc);
             pthread_exit(NULL);
         }
 
+        // concatena op y fileName
         char cadena[ARR_SIZE];
         sprintf(cadena, "%s %s", "PUBLISH", fileName);
         send_rpc(username, cadena, timestamp);
@@ -295,26 +302,30 @@ int tratar_peticion(void* pet) {
         int result = 0;
         if (index != -1) {
             if (usuarios->users[index].conected) {
-                result = removeContent(usuarios, username, fileName);
+                // todo ok
+                result = removeContent(usuarios, username, fileName); 
 
             }
             else {
+                // usuario no conectado
                 result = 2;
             }
         }
         else {
+            // usuario no existe
             result = 1;
         }
         pthread_mutex_unlock(&mutex_hilos);
 
         int8_t to_send_result = (int8_t)result;
         // envio de resultado => 1 byte
-        if (sendMessage(local_sc, &to_send_result, 1) < 0) {
+        if (sendMessage(local_sc, (char *)&to_send_result, 1) < 0) {
             perror("error sending ret_val");
             close(local_sc);
             pthread_exit(NULL);
         }
 
+        // concat publish + fileName
         char cadena[ARR_SIZE];
         sprintf(cadena, "%s %s", "PUBLISH", fileName);
         send_rpc(username, cadena, timestamp);
@@ -325,7 +336,7 @@ int tratar_peticion(void* pet) {
         
         int8_t to_send_result = (int8_t)0;
         // envio de resultado => 1 byte
-        if (sendMessage(local_sc, &to_send_result, 1) < 0) {
+        if (sendMessage(local_sc, (char *)&to_send_result, 1) < 0) {
             perror("error sending ret_val");
             close(local_sc);
             pthread_exit(NULL);
@@ -333,6 +344,7 @@ int tratar_peticion(void* pet) {
 
         pthread_mutex_lock(&mutex_hilos);
         
+        // usuarios conectados
         int num_users = 0;
         for (int i = 0; i < usuarios->size; ++i) {
             if (usuarios->users[i].conected)  num_users++;
@@ -340,11 +352,11 @@ int tratar_peticion(void* pet) {
         sprintf(temp, "%i", num_users); 
         
         if (writeLine(local_sc, temp) < 0) {
-                perror("error: writeline list_users (num_users)");
-                close(local_sc);
-                pthread_exit(NULL);
-                return -1;
-            }
+            perror("error: writeline list_users (num_users)");
+            close(local_sc);
+            pthread_exit(NULL);
+            return -1;
+        }
         for (int i = 0; i < usuarios->size; ++i) {
             
             user curr = usuarios->users[i];
@@ -398,7 +410,7 @@ int tratar_peticion(void* pet) {
             // user does not exists 
             int8_t to_send_result = (int8_t)1;
             // envio de resultado => 1 byte
-            if (sendMessage(local_sc, &to_send_result, 1) < 0) {
+            if (sendMessage(local_sc, (char *)&to_send_result, 1) < 0) {
                 perror("error sending ret_val");
                 close(local_sc);
                 pthread_exit(NULL);
@@ -411,7 +423,7 @@ int tratar_peticion(void* pet) {
             if (!usuarios->users[index].conected) {
                 int8_t to_send_result = (int8_t)2;
                 // envio de resultado => 1 byte
-                if (sendMessage(local_sc, &to_send_result, 1) < 0) {
+                if (sendMessage(local_sc, (char *)&to_send_result, 1) < 0) {
                     perror("error sending ret_val");
                     close(local_sc);
                     pthread_exit(NULL);
@@ -420,7 +432,7 @@ int tratar_peticion(void* pet) {
             } else {
                 int8_t to_send_result = (int8_t)0;
                 // envio de resultado => 1 byte
-                if (sendMessage(local_sc, &to_send_result, 1) < 0) {
+                if (sendMessage(local_sc, (char *)&to_send_result, 1) < 0) {
                     perror("error sending ret_val");
                     close(local_sc);
                     pthread_exit(NULL);
@@ -487,13 +499,10 @@ int main(int argc, char* argv[]) {
         printf("Port number must be numeric and greater than 0\n");
         return -1;
     }
-    else {
-        //everything alright 
-    }
+    
 
     // print ip
     char hostname[256];
-
     gethostname(hostname, sizeof(hostname));
     struct hostent* hp = gethostbyname(hostname);
     struct in_addr ip;
@@ -508,14 +517,17 @@ int main(int argc, char* argv[]) {
     usuarios = createUserList();
 
     signal(SIGINT, stop_server);
+    
+    //socket
     int sc;
-
     sd = serverSocket(INADDR_ANY, atoi(argv[2]), SOCK_STREAM);
 
     if (sd < 0) {
         perror("SERVER: Error en serverSocket\n");
         return 0;
     }
+
+    // main loop
     while (!!1) {
         peticion p;
         struct sockaddr_in client;
@@ -529,6 +541,7 @@ int main(int argc, char* argv[]) {
             perror("Error en serverAccept\n");
             continue;
         }
+        // hilo por peticion
         pthread_t hilo;
         pthread_attr_t attr;
         pthread_attr_init(&attr);
