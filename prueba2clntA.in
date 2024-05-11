@@ -1,5 +1,0 @@
-REGISTER A
-CONNECT A
-PUBLISH /tmp/ficheroA.txt HOLA MUNDO
-QUIT
-

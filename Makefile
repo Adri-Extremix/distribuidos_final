@@ -36,9 +36,7 @@ testing: tests/tests_userList.c src/servidor/server_storage.c
 	gcc -g -Wall -c src/servidor/server_storage.c
 	gcc -g -Wall -c tests/tests_userList.c
 	gcc -o test tests_userList.o server_storage.o
-	gcc -o test_concurrency tests/tests_concurrency.c
 	@./test
-	@bash tests/test_imp.sh
 
 clean:
 	rm *.o

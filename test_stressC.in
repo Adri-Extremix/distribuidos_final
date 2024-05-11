@@ -1,6 +1,0 @@
-register C
-connect C
-publish /tmp/ficheroPruebaC.in fichero de C
-list_content D
-get_file D /tmp/ficheroPruebaD.in /home/cesar/Documents/Universidad/Tercero/SSDD/distribuidos_final/obtenidoC.txt
-

@@ -1,6 +1,0 @@
-register A
-connect A
-publish /tmp/ficheroPruebaA.in fichero de A
-list_content B
-get_file B /tmp/ficheroPruebaB.in /home/cesar/Documents/Universidad/Tercero/SSDD/distribuidos_final/obtenidoA.txt
-

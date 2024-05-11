@@ -10,7 +10,7 @@
     commentstyle=\color{gray},
     keywordstyle=\color{blue},
     numberstyle=\color{yellow},
-    stringstyle=\color{pink},
+    stringstyle=\color{brown},
     breaklines=true,
     breakatwhitespace=false,
     captionpos=b,
@@ -153,7 +153,7 @@ Para asegurar el acceso exclusivo a la estructura de datos y, así, evitar condi
 \label{subsec:comunicacion}
 La comunicación entre los distintos clientes y el servidor ocurre de manera independiente a las distintas máquinas que se conectan a nuestro servicio a través de sockets. Para conseguir esto hemos codificado todas las comunicaciones en cadeanas de caracterres, a excepción del valor de retorno de las operaciones. Además, para evitar problemas ocasionados por el ordenamiento de bytes enviamos un único carácter a la vez. 
 
-La comunicación será una comunicación por petición, por lo que se abrirá la conexión con el servidor para realizar la petición correspondiente y, si todo ha funcionado correctamente, se cerrará la conexión.
+La comunicación será una comunicación por petición, por lo que se abrirá la conexión con el servidor para realizar la petición correspondiente que se cerrará al final de la misma.
 
 \subsubsection{Funciones auxiliares para la comunicación}
 \label{subsec:funciones}
@@ -238,7 +238,13 @@ Y con el siguiente fragmento del fichero \textit{Makefile} se enlazan los ficher
 
 \section{Descripción de pruebas}
 \label{sec:descripcion_de_pruebas}
-Los requisitos de la aplicación nos dificultan el desarrollo de pruebas de manera reproducible, por lo que se ha optado por realizar las pruebas manualmente en local y analizar los resultados. No obstante, en el entregable se incluye un pequeño script en python que permite generar los ficheros necesarios para las pruebas y la entrada de las distintas terminales para cada test. 
+Los requisitos de la aplicación nos dificultan el desarrollo de pruebas de manera reproducible, por lo que se ha optado por realizar las pruebas manualmente en local y analizar los resultados. No obstante, en el entregable se incluye un pequeño script en python que permite generar los ficheros necesarios para las pruebas y la entrada de las distintas terminales para cada test para facilitar la ejecución de las mismas.
+
+\begin{lstlisting}[caption=Generar/limpiar ficheros de prueba y entradas de terminal, language=bash]
+    python3 tests/setup_clean.py 0 # generacion de ficheros
+    python3 tests/setup_clean.py 1 # limpieza de ficheros
+    
+\end{lstlisting}
 
 Las pruebas se realizarán a través de la ejecución de varios procesos en distintos terminales para la correcta visualización de las distintas impresiones. Al principio de cada prueba se iniciarán el servidor, el servidor RPC y el servidor web; y al final de estás se cerrarán estos servidores.
 Las pruebas a realizar serán las siguientes.
@@ -252,67 +258,61 @@ Para la ejecución de estas pruebas, se ha modificado el código de la estructur
 \label{subsection:1_cliente}
 Se realizará una prueba donde no exista concurrencia. Con tan solo un cliente se probará el correcto funcionamiento de la comunicación del cliente con el servidor, del cliente con el servicio web y del servidor con el servicio rpc.
 El cliente ejecutará las siguientes operaciones
-\begin{center}
-    \begin{lstlisting}[caption=Operaciones a realizar por el cliente]
-        REGISTER A
-        REGISTER B
-        CONNECT C
-        CONNECT A
-        CONNECT B
-        CONNECT A
-        PUBLISH HOLA HOLA 
-        LIST_USERS
-        LIST_CONTENT B
-        LIST_CONTENT A
-        QUIT
-    \end{lstlisting}
-\end{center}
+\begin{lstlisting}[caption=Operaciones a realizar por el cliente]
+    REGISTER A
+    REGISTER B
+    CONNECT C
+    CONNECT A
+    CONNECT B
+    CONNECT A
+    PUBLISH HOLA HOLA 
+    LIST_USERS
+    LIST_CONTENT B
+    LIST_CONTENT A
+    QUIT
+\end{lstlisting}
 
 \subsubsection{Resultados}
 \label{subsubsection:resultados_1_cliente}
 Los resultados obtenidos en cada una de las terminales muestran el correcto comportamiento del sistema.
-\begin{center}
-    \begin{lstlisting}[caption=Resultados obtenidos en el cliente]
-        c> REGISTER A
-        REGISTER OK
-        c> REGISTER B
-        REGISTER OK
-        c> CONNECT C
-        CONNECT FAIL, USER DOES NOT EXIST
-        c> CONNECT A
-        CONNECT OK
-        c> CONNECT B
-        CONNECT FAIL
-        c> CONNECT A
-        CONNECT FAIL
-        c> PUBLISH HOLA HOLA
-        PUBLISH OK 
-        c> LIST_USERS
-        LIST_USERS OK
-        c> LIST_CONTENT B
-        LIST_CONTENT FAIL, USER NOT CONNECTED
-        c> LIST_CONTENT A
-        HOLA HOLA
-        LIST_CONTENT OK
-        c>QUIT
-        DISCONNECT OK
-        +++ FINISHED +++
-    \end{lstlisting}
-\end{center}
+\begin{lstlisting}[caption=Resultados obtenidos en el cliente]
+    c> REGISTER A
+    REGISTER OK
+    c> REGISTER B
+    REGISTER OK
+    c> CONNECT C
+    CONNECT FAIL, USER DOES NOT EXIST
+    c> CONNECT A
+    CONNECT OK
+    c> CONNECT B
+    CONNECT FAIL
+    c> CONNECT A
+    CONNECT FAIL
+    c> PUBLISH HOLA HOLA
+    PUBLISH OK 
+    c> LIST_USERS
+    LIST_USERS OK
+    c> LIST_CONTENT B
+    LIST_CONTENT FAIL, USER NOT CONNECTED
+    c> LIST_CONTENT A
+    HOLA HOLA
+    LIST_CONTENT OK
+    c>QUIT
+    DISCONNECT OK
+    +++ FINISHED +++
+\end{lstlisting}
 
-\begin{center}
-    \begin{lstlisting}[caption=Impresiones del servidor RPC]
-        A	REGISTER	11-05-2024 08:32:41
-        B	REGISTER	11-05-2024 08:32:46
-        C	CONNECT	    11-05-2024 08:32:51
-        A	CONNECT	    11-05-2024 08:32:55
-        A	PUBLISH HOLA	11-05-2024 08:33:18
-        A	LIST_USERS	11-05-2024 08:33:22
-        A	LIST_CONTENT	11-05-2024 08:35:56
-        A	LIST_CONTENT	11-05-2024 08:36:25
-        A	DISCONNECT	11-05-2024 08:36:44
-    \end{lstlisting}
-\end{center}
+\begin{lstlisting}[caption=Impresiones del servidor RPC]
+    A	REGISTER	11-05-2024 08:32:41
+    B	REGISTER	11-05-2024 08:32:46
+    C	CONNECT	    11-05-2024 08:32:51
+    A	CONNECT	    11-05-2024 08:32:55
+    A	PUBLISH HOLA	11-05-2024 08:33:18
+    A	LIST_USERS	11-05-2024 08:33:22
+    A	LIST_CONTENT	11-05-2024 08:35:56
+    A	LIST_CONTENT	11-05-2024 08:36:25
+    A	DISCONNECT	11-05-2024 08:36:44
+\end{lstlisting}
 
 \subsection{Comunicación entre dos clientes}
 \label{subsection:2_clientes}
@@ -320,29 +320,24 @@ Para probar el correcto funcionamiento de la comunicación entre clientes se ten
 De esta manera ambos clientes tendrán su propio hilo para atender peticiones y el servidor podrá aprovechar la concurrencia para atender a los dos clientes.
 
 Los clientes ejecutarán las siguientes operaciones
-\begin{center}
-    \begin{lstlisting}[caption=Operaciones a realizar por el cliente A]
-        REGISTER A
-        CONNECT A
-        PUBLISH /tmp/ficheroA.txt HOLA MUNDO
-        QUIT
-    \end{lstlisting}
-\end{center}
-\begin{center}
-    \begin{lstlisting}[caption=Operaciones a realizar por el cliente B]
-        REGISTER B
-        CONNECT B
-        GET_FILE A /tmp/ficheroA.txt /tmp/fileA.txt
-        QUIT
-    \end{lstlisting}
-\end{center}
+\begin{lstlisting}[caption=Operaciones a realizar por el cliente A]
+    REGISTER A
+    CONNECT A
+    PUBLISH /tmp/ficheroA.txt HOLA MUNDO
+    QUIT
+\end{lstlisting}
+\begin{lstlisting}[caption=Operaciones a realizar por el cliente B]
+    REGISTER B
+    CONNECT B
+    GET_FILE A /tmp/ficheroA.txt /tmp/fileA.txt
+    QUIT
+\end{lstlisting}
 
 \subsubsection{Resultados}
 \label{subsubsection:resultados_2_clientes}
 El resultado obtenido coincide con el resultado esperado. Ambos clientes son capaces de acceder a la estructura concurrentemente sin condiciones de carrera y conectarse entre ellos para la transferencia de un archivo. El resultado obtenido en las terminales de ambos clientes y del servidor rpc es parecido al del test anterior, por lo que no será incluído en la memoria. 
 
-\begin{center}
-    \begin{lstlisting}[caption=Resultado de la transferencia del archivo, language=bash]
+\begin{lstlisting}[caption=Resultado de la transferencia del archivo, language=bash]
     # antes de la ejecucion de get_file
     [@localhost]$ ls /tmp/ | grep .txt
     ficheroA.txt
@@ -354,25 +349,55 @@ El resultado obtenido coincide con el resultado esperado. Ambos clientes son cap
     fileA.txt
     [@localhost]$ cat /tmp/fileA.txt
     HOLA MUNDO DESDE CLIENTE A
-    \end{lstlisting}
-\end{center}
+\end{lstlisting}
 
 \subsection{Prueba de estrés para el servidor}
 \label{subsec:estres}
-Con el objetivo de probar la concurrencia del servidor y de la implmentación ,y su capacidad para atender a muchos clientes, se utilizarán 5 clientes (con los nombres de la A a la E) que se conectarán al servicio, publicarán un fichero, realizarán un listado de contenido y obtendrán el fichero publicado por el siguiente cliente.
+Con el objetivo de probar la concurrencia del servidor, y su capacidad para atender a muchos clientes, se utilizarán 5 clientes (con los nombres de la A a la E) que se conectarán al servicio, publicarán un fichero, realizarán un listado de contenido y obtendrán el fichero publicado por el siguiente cliente.
 Para ello todos los clientes ejecutarán un código similar al siguiente
-\begin{center}
-    \begin{lstlisting}[caption=Operaciones a realizar por cada cliente i]
-        REGISTER i
-        CONNECT i
-        PUBLISH /tmp/ficheroPrueba_i
-        LIST_CONTENT i+1 
-        GET_FILE i+1 /tmp/ficheroPrueba_i+1 <dir_actual>/obtenido_i
-    \end{lstlisting}
-\end{center}
+\begin{lstlisting}[caption=Operaciones a realizar por cada cliente i]
+    REGISTER i
+    CONNECT i
+    PUBLISH /tmp/ficheroPrueba_i
+    LIST_CONTENT i+1 
+    GET_FILE i+1 /tmp/ficheroPrueba_i+1 <dir_actual>/obtenido_i
+\end{lstlisting}
 
 \subsubsection{Resultados}
 \label{subsubsection:resultados_5_clientes}
+Para la ejecución de este test es necesario ejecutar de manera concurrente 5 clientes. Para ello nos hemos apoyado de un pequeño script de bash que se adjunta a continuación. Dado el funcionamiento de los mandatos en \textit{background}, cada cliente se ejecutará en una subterminal propia, asegurándonos la ejecución simultánea de todos los procesos. 
+
+\begin{lstlisting}[caption=Script para la ejecucion concurrente de 5 clientes, language=bash]
+#!/bin/bash
+
+function set_server () {
+    printf "\033[0;33mSETUP SERVERS\033[0m\n"
+    env RPC_IP=localhost ./servidor -p 4500 > svc_$1.log &
+    ./servidor_rpc > rpc_$1.log &
+    python3 src/servicio_web/timestamp.py > tmstmp_$1.log &
+}
+
+function kill_server () {
+    killall -s INT servidor
+    echo "kill server"
+    killall -s KILL servidor_rpc
+    echo "kill python3"
+    killall -s KILL python3
+}
+
+
+set_server "concurrencia"
+python3 src/cliente/client.py -s localhost -p 4500 < test_stressA.in &
+python3 src/cliente/client.py -s localhost -p 4500 < test_stressB.in &
+python3 src/cliente/client.py -s localhost -p 4500 < test_stressC.in &
+python3 src/cliente/client.py -s localhost -p 4500 < test_stressD.in &
+python3 src/cliente/client.py -s localhost -p 4500 < test_stressE.in &
+sleep 5
+kill_server
+
+\end{lstlisting}
+
+El resultado de este test es el esperado. Cada cliente ha podido ejecutarse sin problemas, obteniendo en el directorio actual el fichero solicitado al siguiente cliente. Además, la estructura de datos no ha presentado ningún tipo de condición de carrera. 
 
 \section{Conclusiones}
 \label{sec:conclusiones}

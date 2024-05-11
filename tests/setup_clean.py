@@ -24,7 +24,7 @@ def set_up():
     # test 4 clientes
     for x, i in enumerate(names):
         # entrada de terminal
-        os.system(f"echo \"register {i}\nconnect {i}\npublish /tmp/ficheroPrueba{i}.in fichero de {i}\nlist_content {names[(x + 1) % len(names)]}\nget_file {names[(x + 1) % len(names)]} /tmp/ficheroPrueba{names[(x+1)%len(names)]}.in {curr_dir}/obtenido{i}.txt\n\" > {curr_dir}/test_stress{i}.in")
+        os.system(f"echo \"register {i}\nconnect {i}\npublish /tmp/ficheroPrueba{i}.in fichero de {i}\nlist_content {names[(x + 1) % len(names)]}\nget_file {names[(x + 1) % len(names)]} /tmp/ficheroPrueba{names[(x+1)%len(names)]}.in {curr_dir}/obtenido{i}.txt\nQUIT\n\" > {curr_dir}/test_stress{i}.in\n")
         # ficheros a compartir 
         os.system(f"echo \"{i} te saluda agradablemente en una mañana de agosto, mirando las horas pasar como olas rompiendo en el acantilado.\" > /tmp/ficheroPrueba{i}.in")
 
@@ -34,7 +34,13 @@ def clean():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("invalid number of arguments")
+        exit()
+
     if sys.argv[1] == "0":
         set_up()
-    else:
+    elif sys.argv[1] == "1":
         clean()
+    else:
+        print("invalid argument. Must be 0 or 1")
