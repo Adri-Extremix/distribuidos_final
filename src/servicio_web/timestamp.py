@@ -8,6 +8,7 @@ class Calculadora(ServiceBase):
 
     @rpc(_returns=Unicode)
     def get_time(ctx):
+        """Servicio que retorna la fecha actual con el formato completo"""
         tiempo_actual = time.localtime()
 
         return time.strftime("%d-%m-%Y %H:%M:%S",tiempo_actual)
