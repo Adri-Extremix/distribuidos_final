@@ -1,0 +1,3 @@
+Para compilar el proyecto ejecute el comando `make` desde la raíz. 
+
+Para ejecutar el test de la implementación de la estructura de datos ejecute el comando `make testing` desde la raíz.
