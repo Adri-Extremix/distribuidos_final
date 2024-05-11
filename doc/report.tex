@@ -192,49 +192,63 @@ program PRINT {
 
 Esta interfaz nos permite generar 4 ficheros de código que implementan la funcionalidad deseada en una función \texttt{rpc\_print\_1}. Esto lo hacemos a través del comando \texttt{rpcgen}.
 
-Para que el proceso cliente conozca la dirección IP del servidor rpc hemos decidido utilizar una variable de entorno \textit{RPC\_IP}. Para su consulta hemos desarrollado una función \texttt{get\_ip}, implementada en el fichero \textit{servidor.c}. Por último, hemos implementado una función que encapsula la construcción y envío de la cadena de texto exigida por el enunciado al servidor rpc. 
+Para que el proceso cliente conozca la dirección IP del servidor rpc hemos decidido utilizar una variable de entorno \textit{RPC\_IP}. Para su consulta hemos desarrollado una función \texttt{get\_ip}, implementada en el fichero \textit{server.c}. Por último, hemos implementado una función que encapsula la construcción y envío de la cadena de texto exigida por el enunciado al servidor rpc. 
 
 \section{Compilación}
 \label{sec:compilacion}
 En esta sección nos centraremos en la forma de compilar los servidores, ya que son la única parte del código escrita en un lenguaje compilado. La compilación del proyecto está contenida en un fichero \textit{Makefile} situado en la raíz del proyecto, de forma que a través del comando \texttt{make} se generen todos los ejecutables necesarios para levantar el sistema.  
 
-El código necesario para el servidor está distribuido en varios ficheros. Primero, el código encargado de la gestión de la comunicación con los clientes Python y la ejecución de los servicios se encuentra contenido en el fichero \textit{src/servidor/servidor.c}; segundo, el código que encapsula la funcionalidad de la estructura de datos se encuentra en el fichero \textit{src/servidor/server\_storage.c}; y, por último, el código para la invocación de los procesos remotos se encuentra en el fichero \textit{print\_clnt.c} generado a través del comando \texttt{rpcgen}.Para generar el ejecutable correctamente hemos compilado cada uno de estos ficheros por separado con las opciones de compilación adecuadas para crear varios ficheros objeto; después hemos enlazado estos ficheros en la generación del ejecutable \textit{servidor}.
+El código necesario para el servidor está distribuido en varios ficheros. Primero, el código encargado de la gestión de la comunicación con los clientes Python y la ejecución de los servicios se encuentra contenido en el fichero \textit{src/servidor/server.c}; segundo, el código que encapsula la funcionalidad de la estructura de datos se encuentra en el fichero \textit{src/servidor/server\_storage.c}; y, por último, el código para la invocación de los procesos remotos se encuentra en el fichero \textit{print\_clnt.c} generado a través del comando \texttt{rpcgen}.Para generar el ejecutable correctamente hemos compilado cada uno de estos ficheros por separado con las opciones de compilación adecuadas para crear varios ficheros objeto; después hemos enlazado estos ficheros en la generación del ejecutable \textit{servidor}.
 
 El código del servidor RPC está contenido exclusivamente en los ficheros \textit{print\_svc.c} y \textit{print\_server.c}. De nuevo, compilaremos estos dos ficheros de manera separada para luego enlazarlos.
 
 A continuación se muestran los comandos necesarios para generar los ficheros objeto:
 
-\begin{center}
-  \begin{lstlisting}[caption=Compilación de ficheros en ficheros objetos, language=bash]
-    # generacion de objeto de la implementacion
-    gcc -c src/servidor/server_storage.c
-    
-    # generacion de objeto de funciones auxiliares
-    gcc -c src/servidor/common.c
+\begin{lstlisting}[caption=Compilación de ficheros en ficheros objetos, language=bash]
+# generacion de objeto de la implementacion
+gcc -c src/servidor/server_storage.c
 
-    # generacion de objetos de archivos rpc
-    gcc -g -I/usr/include/tirpc -D_REENTRANT -o print_clnt.o -c src/rpc/print_clnt.c
-    gcc -g -I/usr/include/tirpc -D_REENTRANT -o print_svc.o -c src/rpc/print_svc.c
+# generacion de objeto de funciones auxiliares
+gcc -c src/servidor/common.c
 
-    # generacion de objeto de servidores
-    gcc -c servidor.c
-    gcc -g -I/usr/include/tirpc -c src/rpc/print_server.c
-    
-    \end{lstlisting}
-\end{center}
+# generacion de objetos de archivos rpc
+gcc -g -I/usr/include/tirpc -D_REENTRANT -o print_clnt.o -c src/rpc/print_clnt.c
+gcc -g -I/usr/include/tirpc -D_REENTRANT -o print_svc.o -c src/rpc/print_svc.c
+
+# generacion de objeto de servidores
+gcc -c server.c
+gcc -g -I/usr/include/tirpc -c src/rpc/print_server.c
+
+\end{lstlisting}
 
 Y con el siguiente fragmento del fichero \textit{Makefile} se enlazan los ficheros y se generan ambos ejecutables con los nombres \textit{servidor} y \textit{servidor\_rpc}:
 
-\begin{center}
-  \begin{lstlisting}[caption=Generación de ejecutables, language=bash]
-    # generacion de ejecutable del servidor
-    gcc -g -Wall -lrt -o servidor servidor.o server_storage.o common.o print_clnt.o -lnsl -lpthread -ldl -ltirpc
-    
-    # generacion de ejecutable del servidor rpc
-    gcc -g -Wall -lrt -o servidor_rpc print_server.o print_svc.o -lnsl -lpthread -ldl -ltirpc
+\begin{lstlisting}[caption=Generación de ejecutables, language=bash]
+# generacion de ejecutable del servidor
+gcc -g -Wall -lrt -o servidor servidor.o server_storage.o common.o print_clnt.o -lnsl -lpthread -ldl -ltirpc
 
-    \end{lstlisting}
-\end{center}
+# generacion de ejecutable del servidor rpc
+gcc -g -Wall -lrt -o servidor_rpc print_server.o print_svc.o -lnsl -lpthread -ldl -ltirpc
+
+\end{lstlisting}
+
+
+\section{Ejecución del proyecto}
+\label{sec:exec}
+Con todo lo anterior, la forma de ejecutar el proyecto pasa por lanzar 3 servidores y, al menos, un cliente. Además, en el caso del primer servidor desarrollado, encargado de la coordinación de clientes en la aplicación distirbuida, se deberá definir una variable de entorno a través (por ejemplo) del comando \texttt{env}.
+
+\begin{lstlisting}[caption=Ejemplo de ejecucion con los servidores en background y en local, language=bash]
+    # suponiendo que este en la raiz del proyecto
+    
+    # servidores
+    env RPC_IP=localhost ./servidor -p 4500 &
+    ./servidor_rpc & 
+    python src/servicio_web/timestamp.py &
+
+    # cliente
+    python src/cliente/client.py -s localhost -p 4500
+
+\end{lstlisting}
 
 \section{Descripción de pruebas}
 \label{sec:descripcion_de_pruebas}
