@@ -5,9 +5,12 @@
  */
 
 #include "print.h"
-
+ /**
+  * Servicio que se encarga de imprimir el string que recibe por argumento
+ */
 bool_t
 rpc_print_1_svc(char* impresion, int* result, struct svc_req* rqstp) {
+
 	bool_t retval;
 	int ret = printf("%s\n", impresion);
 	if (ret == -1) *result = -1;
