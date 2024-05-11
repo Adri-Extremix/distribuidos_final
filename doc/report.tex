@@ -172,9 +172,10 @@ Para facilitar la implementación de la comunicación mediante \textit{sockets} 
 \section{Servicio web}
 \label{sec:web_service}
 Se ha desarrollado un servcio web en \textit{Python} que proporciona la fecha y la hora en la que se realizó la petición al servicio web.
-Este servicio web se llamará desde el lado del cliente cada vez que se quiera realizar un llamada a algún servicio de la aplicación, y se mandarán al servidor junto al resto de datos necesarios.
+Este servicio web se llamará desde el lado del cliente, a través de la librería \textit{zeep}, cada vez que se quiera realizar un llamada a algún servicio de la aplicación, y se mandarán al servidor junto al resto de datos necesarios.
 En el lado cliente se asume que el servidor web se encuentra en la ip \textit{localhost}.
 
+El servicio web se encontrará alojado en un servidor que hará uso de la librería \textit{spyne} para implementar una única función. Esta función obtendrá la fecha actual del dispostivo a través \textit{time} y la devolverá.
 \section{Integración del servidor RPC}
 \label{sec:rpc}
 En esta sección describimos cómo hemos abordado la implementación de un servidor (desde este momento referido como \textit{servidor rpc}) que recibe una cadena de carácteres y la imprime por pantalla. El proceso que actuará de cliente en esta comunicación es el servidor desarrollado para la aplicación distribuída de compartición de ficheros. 
@@ -237,7 +238,118 @@ Y con el siguiente fragmento del fichero \textit{Makefile} se enlazan los ficher
 
 \section{Descripción de pruebas}
 \label{sec:descripcion_de_pruebas}
-Descripción de pruebas 
+Los requisitos de la aplicación nos dificultan el desarrollo de pruebas de manera reproducible, por lo que se ha optado por realizar las pruebas en local y analizar los resultados.
+Estas pruebas se realizarán a través de la ejecución de varios procesos en distintos terminales para la correcta visualización de las distintas impresiones.
+
+Al principio de cada prueba se iniciarán el servidor, el servidor RPC y el servidor web; y al final de estás se cerrarán estos servidores.
+Las pruebas a realizar serán las siguientes.
+
+\subsection{Un solo cliente}
+\label{subsection:1_cliente}
+Se realizará una prueba donde no exista concurrencia. Con tan solo un cliente se probará el correcto funcionamiento de la comunicación del cliente con el servidor, del cliente con el servicio web y del servidor con el servicio rpc.
+El cliente ejecutará las siguientes operaciones
+\begin{center}
+    \begin{lstlisting}[caption=Operaciones a realizar por el cliente]
+        REGISTER A
+        REGISTER B
+        CONNECT C
+        CONNECT A
+        CONNECT B
+        CONNECT A
+        PUBLISH HOLA HOLA 
+        LIST_USERS
+        LIST_CONTENT B
+        LIST_CONTENT A
+        QUIT
+    \end{lstlisting}
+\end{center}
+
+\subsubsection{Resultados}
+\label{subsubsection:resultados_1_cliente}
+\begin{center}
+    \begin{lstlisting}[caption=Resultados obtenidos en el cliente]
+        c> REGISTER A
+        REGISTER OK
+        c> REGISTER B
+        REGISTER OK
+        c> CONNECT C
+        CONNECT FAIL, USER DOES NOT EXIST
+        c> CONNECT A
+        CONNECT OK
+        c> CONNECT B
+        CONNECT FAIL
+        c> CONNECT A
+        CONNECT FAIL
+        c> PUBLISH HOLA HOLA
+        PUBLISH OK 
+        c> LIST_USERS
+        LIST_USERS OK
+        c> LIST_CONTENT B
+        LIST_CONTENT FAIL, USER NOT CONNECTED
+        c> LIST_CONTENT A
+        HOLA HOLA
+        LIST_CONTENT OK
+        c>QUIT
+        DISCONNECT OK
+        +++ FINISHED ++
+    \end{lstlisting}
+\end{center}
+
+\begin{center}
+    \begin{lstlisting}[caption=Impresiones del servidor RPC]
+        A	REGISTER	11-05-2024 08:32:41
+        B	REGISTER	11-05-2024 08:32:46
+        C	CONNECT	    11-05-2024 08:32:51
+        A	CONNECT	    11-05-2024 08:32:55
+        A	PUBLISH HOLA	11-05-2024 08:33:18
+        A	LIST_USERS	11-05-2024 08:33:22
+        A	LIST_CONTENT	11-05-2024 08:35:56
+        A	LIST_CONTENT	11-05-2024 08:36:25
+        A	DISCONNECT	11-05-2024 08:36:44
+    \end{lstlisting}
+\end{center}
+
+
+\subsection{Comunicación entre dos clientes}
+\label{subsection:2_clientes}
+Para probar el correcto funcionamiento de la comunicación entre clientes se tendrán dos clientes que publiquen archivos y obtenga el archivo del otro.
+De esta manera ambos clientes tendrán su propio hilo para atender peticiones y el servidor podrá aprovechar la concurrencia para atender a los dos clientes.
+Los clientes ejecutarán las siguientes operaciones
+\begin{center}
+    \begin{lstlisting}[caption=Operaciones a realizar por el cliente A]
+        REGISTER A
+        CONNECT A
+        PUBLISH /tmp/ficheroA.txt HOLA MUNDO
+        GET_FILE B /tmp/ficheroB.txt /tmp/fileB.txt
+    \end{lstlisting}
+\end{center}
+\begin{center}
+    \begin{lstlisting}[caption=Operaciones a realizar por el cliente B]
+        REGISTER B
+        CONNECT B
+        PUBLISH /tmp/ficheroB.txt HOLA MUNDO
+        GET_FILE A /tmp/ficheroA.txt /tmp/fileA.txt
+    \end{lstlisting}
+\end{center}
+
+\subsubsection{Resultados}
+\label{subsubsection:resultados_2_clientes}
+
+\subsection{Prueba de estrés para el servidor}
+Con el objetivo de probar la concurrencia del servidor y de la implmentación ,y su capacidad para atender a muchos clientes, se utilizarán 5 clientes (con los nombres de la A a la E) que se conectarán al servicio, publicarán un fichero, realizarán un listado de contenido y obtendrán el fichero publicado por el siguiente cliente.
+Para ello todos los clientes ejecutarán un código similar al siguiente
+\begin{center}
+    \begin{lstlisting}[caption=Operaciones a realizar por cada cliente i]
+        REGISTER i
+        CONNECT i
+        PUBLISH /tmp/ficheroPrueba_i
+        LIST_CONTENT i+1 
+        GET_FILE i+1 /tmp/ficheroPrueba_i+1 <dir_actual>/obtenido_i
+    \end{lstlisting}
+\end{center}
+
+\subsubsection{Resultados}
+\label{subsubsection:resultados_5_clientes}
 
 \section{Conclusiones}
 \label{sec:conclusiones}
