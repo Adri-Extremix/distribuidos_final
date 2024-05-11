@@ -66,7 +66,7 @@
 
 \section{Introducción}
 \label{sec:introduccion}
-En este documento se recoge el desarrollo de la práctica final de Sistemas Distribuidos. Para esta práctica hemos desarrollado una aplicación distribuida que cuenta con 2 servidores desarrollados en lenguaje C, un código clinete desarrollado en python y un servicio web desarrollado igualmente en Python. A continuación describiremos el diseño e implementación de cada una de las partes del sistema. 
+En este documento se recoge el desarrollo de la práctica final de Sistemas Distribuidos. Para esta práctica hemos desarrollado una aplicación distribuida que cuenta con 2 servidores desarrollados en lenguaje C, un código cliente desarrollado en Python y un servicio web desarrollado igualmente en Python. A continuación describiremos el diseño e implementación de cada una de las partes del sistema. 
 \section{Diseño original}
 \label{sec:disenno}
 La aplicación constará de dos partes diferenciadas: los clientes y el servidor.
@@ -196,9 +196,9 @@ Para que el proceso cliente conozca la dirección IP del servidor rpc hemos deci
 
 \section{Compilación}
 \label{sec:compilacion}
-En esta sección nos centraremos en la forma de compilar los servidores, ya que son la única parte del código escrita en un lenguaje compilado. La compilación del proyecto está contenida en un fichero \textit{Makefile} situado en la raíz del proyecto, de forma que a través del comando \texttt{make} se generen todos los ejecutables necesariospara levantar el sistema.  
+En esta sección nos centraremos en la forma de compilar los servidores, ya que son la única parte del código escrita en un lenguaje compilado. La compilación del proyecto está contenida en un fichero \textit{Makefile} situado en la raíz del proyecto, de forma que a través del comando \texttt{make} se generen todos los ejecutables necesarios para levantar el sistema.  
 
-El código necesario para el servidor está distribuido en varios ficheros. Primero, el código encargado de la gestión de la comunicación con los clientes python y la ejecución de los servicios se encuentra contenido en el fichero \textit{src/servidor/servidor.c}; segundo, el código que encapsula la funcionalidad de la estructura de datos se encuentra en el fichero \textit{src/servidor/server\_storage.c}; y, por último, el código para la invocación de los procesos remotos se encuentra en el fichero \textit{print\_clnt.c} generado a través del comando \texttt{rpcgen}.Para generar el ejecutable correcatmente hemos compilado cada uno de estos ficheros por separado con las opciones de compilación adecuadas para crear varios ficheros objeto; después hemos enlazado estos ficheros en la generación del ejecutable \textit{servidor}.
+El código necesario para el servidor está distribuido en varios ficheros. Primero, el código encargado de la gestión de la comunicación con los clientes Python y la ejecución de los servicios se encuentra contenido en el fichero \textit{src/servidor/servidor.c}; segundo, el código que encapsula la funcionalidad de la estructura de datos se encuentra en el fichero \textit{src/servidor/server\_storage.c}; y, por último, el código para la invocación de los procesos remotos se encuentra en el fichero \textit{print\_clnt.c} generado a través del comando \texttt{rpcgen}.Para generar el ejecutable correctamente hemos compilado cada uno de estos ficheros por separado con las opciones de compilación adecuadas para crear varios ficheros objeto; después hemos enlazado estos ficheros en la generación del ejecutable \textit{servidor}.
 
 El código del servidor RPC está contenido exclusivamente en los ficheros \textit{print\_svc.c} y \textit{print\_server.c}. De nuevo, compilaremos estos dos ficheros de manera separada para luego enlazarlos.
 
@@ -247,7 +247,6 @@ Los requisitos de la aplicación nos dificultan el desarrollo de pruebas de mane
 \end{lstlisting}
 
 Las pruebas se realizarán a través de la ejecución de varios procesos en distintos terminales para la correcta visualización de las distintas impresiones. Al principio de cada prueba se iniciarán el servidor, el servidor RPC y el servidor web; y al final de estás se cerrarán estos servidores.
-Las pruebas a realizar serán las siguientes.
 \subsection{Implementación}
 \label{subsec:imp}
 Hemos desarrollado un pequeño código que prueba la implementación de la estructura desarrollada para almacenar la lista de clientes. Este código realiza inserciones y borrados en dicha lista, imprimiendo su estado por pantalla en cada punto, de forma que podemos analizar el comportamiento de la estructura de datos. Las pruebas están contenidas en el fichero \textit{tests\_userList.c} y se pueden compilar y ejecutar a través del comando \texttt{make testing}. 
