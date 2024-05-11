@@ -39,8 +39,8 @@ testing: tests/tests_userList.c src/servidor/server_storage.c
 	@./test
 
 clean:
-	rm *.o
+	rm *.o *.in
 
 DonLimpio:
-	rm *.o servidor servidor_rpc test
+	rm *.o servidor servidor_rpc test *.in
 
