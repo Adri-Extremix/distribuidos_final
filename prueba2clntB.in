@@ -1,0 +1,5 @@
+REGISTER B
+CONNECT B
+GET_FILE A /tmp/ficheroA.txt /tmp/fileA.txt
+QUIT
+

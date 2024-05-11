@@ -140,33 +140,30 @@ class client :
                 connection, client_address = sock.accept()
                 try:
                     message = client._read_string(connection)
+                    #print("conectado")
 
                     if message == "GET_FILE":
                         
                         message = client._read_string(connection)
 
                         namefile = message
-
-                        if namefile not in client._published:
-                            answer = 2
+                        try:
+                            answer = 0
                             connection.sendall(answer.to_bytes(1,'big'))
-                        else:
-                            try:
-                                answer = 0
-                                connection.sendall(answer.to_bytes(1,'big'))
-                                # Leo el fichero que me han pedido y lo envío
-                                with open(namefile, mode="rb") as file:
-                                    while True:
-                                        chunk = file.read(1024)
-                                        if not chunk:
-                                            break
-                                        connection.sendall(chunk)
-                            except FileNotFoundError:
-                                answer = 1
-                                connection.sendall(answer.to_bytes(1,'big'))
-                            except Exception as e:
-                                print(e)
-                    else:  
+                            # Leo el fichero que me han pedido y lo envío
+                            with open(namefile, mode="rb") as file:
+                                while True:
+                                    chunk = file.read(1024)
+                                    if not chunk:
+                                        break
+                                    connection.sendall(chunk)
+                        except FileNotFoundError:
+                            answer = 1
+                            connection.sendall(answer.to_bytes(1,'big'))
+                        except Exception as e:
+                            print(e)
+                    else:
+                        #print("not operation")
                         answer = 2
                         connection.sendall(answer.to_bytes(1,'big'))
 
@@ -204,8 +201,8 @@ class client :
             client._sock = sock # Guardo el socket para poder cerrarlo en el disconnect
 
             ip_address = socket.gethostbyname(socket.gethostname())
-            server_address = (ip_address,0) # el puerto 0 toma un puerto libre
-            sock.bind(server_address)
+            #server_address = (ip_address,0) # el puerto 0 toma un puerto libre
+            sock.bind(("", 0)) # puerto 0 y escucha cualquier interfaz de red
             address, port = sock.getsockname() # Obtengo el puerto asignado
 
 
@@ -215,6 +212,7 @@ class client :
             message = ""
 
             answer = int.from_bytes(serv_sock.recv(1), 'big')
+            #print("port:", port)
 
         except Exception as e:
             print(e)
@@ -326,7 +324,6 @@ class client :
         match answer:
             case 0:
                 print("PUBLISH OK")
-                client._published.add(fileName)
             case 1:
                 print("PUBLISH FAIL, USER DOES NOT EXIST")
             case 2:
@@ -372,7 +369,6 @@ class client :
         match answer:
             case 0:
                 print("DELETE OK")
-                client._published.remove(fileName)
             case 1:
                 print("DELETE FAIL, USER DOES NOT EXIST")
             case 2:
@@ -523,6 +519,7 @@ class client :
         for dict_user in list_users:
             if dict_user["username"] == user:
                 client_sock = client._get_socket(dict_user["ip"],int(dict_user["port"]))
+                #print(">>", dict_user["ip"], dict_user["port"])
                 break
         
         try:

@@ -238,11 +238,15 @@ Y con el siguiente fragmento del fichero \textit{Makefile} se enlazan los ficher
 
 \section{Descripción de pruebas}
 \label{sec:descripcion_de_pruebas}
-Los requisitos de la aplicación nos dificultan el desarrollo de pruebas de manera reproducible, por lo que se ha optado por realizar las pruebas en local y analizar los resultados.
-Estas pruebas se realizarán a través de la ejecución de varios procesos en distintos terminales para la correcta visualización de las distintas impresiones.
+Los requisitos de la aplicación nos dificultan el desarrollo de pruebas de manera reproducible, por lo que se ha optado por realizar las pruebas manualmente en local y analizar los resultados. No obstante, en el entregable se incluye un pequeño script en python que permite generar los ficheros necesarios para las pruebas y la entrada de las distintas terminales para cada test. 
 
-Al principio de cada prueba se iniciarán el servidor, el servidor RPC y el servidor web; y al final de estás se cerrarán estos servidores.
+Las pruebas se realizarán a través de la ejecución de varios procesos en distintos terminales para la correcta visualización de las distintas impresiones. Al principio de cada prueba se iniciarán el servidor, el servidor RPC y el servidor web; y al final de estás se cerrarán estos servidores.
 Las pruebas a realizar serán las siguientes.
+\subsection{Implementación}
+\label{subsec:imp}
+Hemos desarrollado un pequeño código que prueba la implementación de la estructura desarrollada para almacenar la lista de clientes. Este código realiza inserciones y borrados en dicha lista, imprimiendo su estado por pantalla en cada punto, de forma que podemos analizar el comportamiento de la estructura de datos. Las pruebas están contenidas en el fichero \textit{tests\_userList.c} y se pueden compilar y ejecutar a través del comando \texttt{make testing}. 
+
+Para la ejecución de estas pruebas, se ha modificado el código de la estructura de forma que se inicialice con una capacidad menor a la que usamos en el sistema. Esto nos ha permitido comprobar que la estructura aumenta de capacidad correctamente.
 
 \subsection{Un solo cliente}
 \label{subsection:1_cliente}
@@ -266,6 +270,7 @@ El cliente ejecutará las siguientes operaciones
 
 \subsubsection{Resultados}
 \label{subsubsection:resultados_1_cliente}
+Los resultados obtenidos en cada una de las terminales muestran el correcto comportamiento del sistema.
 \begin{center}
     \begin{lstlisting}[caption=Resultados obtenidos en el cliente]
         c> REGISTER A
@@ -291,7 +296,7 @@ El cliente ejecutará las siguientes operaciones
         LIST_CONTENT OK
         c>QUIT
         DISCONNECT OK
-        +++ FINISHED ++
+        +++ FINISHED +++
     \end{lstlisting}
 \end{center}
 
@@ -309,33 +314,51 @@ El cliente ejecutará las siguientes operaciones
     \end{lstlisting}
 \end{center}
 
-
 \subsection{Comunicación entre dos clientes}
 \label{subsection:2_clientes}
-Para probar el correcto funcionamiento de la comunicación entre clientes se tendrán dos clientes que publiquen archivos y obtenga el archivo del otro.
+Para probar el correcto funcionamiento de la comunicación entre clientes se tendrán dos clientes que realizarán distintas operaciones: el primero publicará un archivo y el segundo se lo pedirá.
 De esta manera ambos clientes tendrán su propio hilo para atender peticiones y el servidor podrá aprovechar la concurrencia para atender a los dos clientes.
+
 Los clientes ejecutarán las siguientes operaciones
 \begin{center}
     \begin{lstlisting}[caption=Operaciones a realizar por el cliente A]
         REGISTER A
         CONNECT A
         PUBLISH /tmp/ficheroA.txt HOLA MUNDO
-        GET_FILE B /tmp/ficheroB.txt /tmp/fileB.txt
+        QUIT
     \end{lstlisting}
 \end{center}
 \begin{center}
     \begin{lstlisting}[caption=Operaciones a realizar por el cliente B]
         REGISTER B
         CONNECT B
-        PUBLISH /tmp/ficheroB.txt HOLA MUNDO
         GET_FILE A /tmp/ficheroA.txt /tmp/fileA.txt
+        QUIT
     \end{lstlisting}
 \end{center}
 
 \subsubsection{Resultados}
 \label{subsubsection:resultados_2_clientes}
+El resultado obtenido coincide con el resultado esperado. Ambos clientes son capaces de acceder a la estructura concurrentemente sin condiciones de carrera y conectarse entre ellos para la transferencia de un archivo. El resultado obtenido en las terminales de ambos clientes y del servidor rpc es parecido al del test anterior, por lo que no será incluído en la memoria. 
+
+\begin{center}
+    \begin{lstlisting}[caption=Resultado de la transferencia del archivo, language=bash]
+    # antes de la ejecucion de get_file
+    [@localhost]$ ls /tmp/ | grep .txt
+    ficheroA.txt
+    [@localhost]$ cat /tmp/ficheroA.txt
+    HOLA MUNDO DESDE CLIENTE A
+    # despues de la ejecucion de get_file
+    [@localhost]$ ls /tmp/ | grep .txt
+    ficheroA.txt
+    fileA.txt
+    [@localhost]$ cat /tmp/fileA.txt
+    HOLA MUNDO DESDE CLIENTE A
+    \end{lstlisting}
+\end{center}
 
 \subsection{Prueba de estrés para el servidor}
+\label{subsec:estres}
 Con el objetivo de probar la concurrencia del servidor y de la implmentación ,y su capacidad para atender a muchos clientes, se utilizarán 5 clientes (con los nombres de la A a la E) que se conectarán al servicio, publicarán un fichero, realizarán un listado de contenido y obtendrán el fichero publicado por el siguiente cliente.
 Para ello todos los clientes ejecutarán un código similar al siguiente
 \begin{center}

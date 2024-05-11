@@ -316,7 +316,7 @@ int tratar_peticion(void* pet) {
         }
 
         char cadena[ARR_SIZE];
-        sprintf(cadena, "%s %a", "PUBLISH", fileName);
+        sprintf(cadena, "%s %s", "PUBLISH", fileName);
         send_rpc(username, cadena, timestamp);
 
     }

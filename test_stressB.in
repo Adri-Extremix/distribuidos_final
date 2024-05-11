@@ -1,0 +1,6 @@
+register B
+connect B
+publish /tmp/ficheroPruebaB.in fichero de B
+list_content C
+get_file C /tmp/ficheroPruebaC.in /home/cesar/Documents/Universidad/Tercero/SSDD/distribuidos_final/obtenidoB.txt
+

@@ -12,11 +12,11 @@ all: $(OBJ)
 	gcc $(FLAGS)  -o servidor servidor.o server_storage.o common.o print_clnt.o $(LDLIBS)
 	gcc $(FLAGS) -o servidor_rpc print_server.o print_svc.o $(LDLIBS)
 	@printf "\n\033[;32m\033[1mSUCCESS\033[0m\n"
-	@printf "USAGE\n-----\n\t1. Run both servers using ./servidor -p <port_number> and ./servidor_rpc\n\t2. Run python web service using python src/servicio_seb/timestamp.py\n\t3. Run a client using python src/cliente/client.py -s <ip_server> -p <port_number>\n\n"
+	@printf "USAGE\n-----\n\t1. Run both servers using ./servidor -p <port_number> and ./servidor_rpc\n\t2. Run python web service using python src/servicio_web/timestamp.py\n\t3. Run a client using python src/cliente/client.py -s <ip_server> -p <port_number>\n\n"
 
 servidor.o: $(SRC)servidor.c common.o rpc
 	@echo "compiling servers..."
-	gcc $(RPCFlAGS) -c $(SRC)servidor.c
+	gcc $(RPCFlAGS) -Wall -c $(SRC)servidor.c
 	gcc $(RPCFlAGS) -c src/rpc/print_server.c
 
 rpc: 

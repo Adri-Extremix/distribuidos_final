@@ -1,0 +1,6 @@
+register D
+connect D
+publish /tmp/ficheroPruebaD.in fichero de D
+list_content E
+get_file E /tmp/ficheroPruebaE.in /home/cesar/Documents/Universidad/Tercero/SSDD/distribuidos_final/obtenidoD.txt
+
