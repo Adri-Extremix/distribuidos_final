@@ -7,7 +7,7 @@
 *.so
 *.o
 venv 
-servidor
+server
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
